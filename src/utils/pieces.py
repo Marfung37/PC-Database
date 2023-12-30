@@ -632,7 +632,8 @@ def extendPieces(customInput=argv[1:]):
     '''Main function for handling user input and program'''
     
     if not isinstance(customInput, list):
-        raise SyntaxError("customInput for extendPieces must be a list")
+        # convert to a list
+        customInput = [customInput]
 
     # get the user input
     userInput = customInput

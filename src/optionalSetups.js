@@ -1,7 +1,7 @@
 const {decoder, encoder, Field} = require('tetris-fumen');
 const Hashmap = require('hashmap');
-const {glueFumen} = require('./glueFumen');
-const {unglueFumen} = require('./unglueFumen');
+const {glueFumen} = require('./utils/glueFumen');
+const {unglueFumen} = require('./utils/unglueFumen');
 
 function combinations(set, k) {
 	var i, j, combs, head, tailcombs;

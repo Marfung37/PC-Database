@@ -1,5 +1,5 @@
 const fs = require('fs');
-const {mirrorFumen, mirrorPieces} = require('./fumenMirror');
+const {mirrorFumen, mirrorPieces} = require('./utils/fumenMirror');
 
 // percent tolerance
 const percentTolerance = 1;

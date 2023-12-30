@@ -1,13 +1,14 @@
 import subprocess
-from os import system
-from pieces import extendPieces
+from os import system, path
 from itertools import islice
 import csv
-from sys import argv
+import sys
+sys.path.append(path.dirname(path.realpath(__file__)) + "/utils")
+from pieces import extendPieces
 
 start = 2
 
-filename = argv[1]
+filename = sys.argv[1]
 sqlInput = open(filename, "r")
 
 sqlLines = csv.DictReader(sqlInput, delimiter='\t')

@@ -1,11 +1,14 @@
-from os import system
+from os import system, path
 from itertools import islice
 import subprocess
 import re
 import threading
-from pieces import extendPieces
 import csv
-from sys import argv
+import sys
+
+sys.path.append(path.dirname(path.realpath(__file__)) + "/utils")
+from pieces import extendPieces
+
 
 def thread_function(lines, lineNum, threadNum):
     for line in lines:
@@ -80,7 +83,7 @@ def thread_function(lines, lineNum, threadNum):
 start = 2
 numThreads = 1
 
-filename = argv[1]
+filename = sys.argv[1]
 sqlInput = open(filename, "r")
 
 sqlLines = list(csv.DictReader(sqlInput, delimiter='\t'))
