@@ -11,8 +11,10 @@
 
 # imports
 import os
+from utils.pieces import sortQueues
 from utils.reversePieces import matchingQueue
 from utils.formulas import PCNUM2LONUM
+from utils.fileReader import queryWhere
 
 # dict of pc number to filename/paths
 FILENAMES = {
@@ -40,7 +42,11 @@ def setupFinder(pcNum: int, queue: str) -> list[str]:
 
     # get leftover pieces
     leftover = queue[:PCNUM2LONUM(pcNum)]
+    print(leftover)
     
+    rows = queryWhere(FILENAMES[pcNum], "ID,Build,Previous Setup,Setup,Next Setup,Solve %", where=f"Leftover={leftover}")
+
+    print(rows)
 
     return [""]
 

@@ -1,6 +1,7 @@
 # Script that is inverse function of extendPieces
 
-from pieces import extendPieces
+from .pieces import extendPieces
+from typing import Callable
 
 def matchingQueue(queue: str, pattern: str) -> bool:
     '''
@@ -72,13 +73,14 @@ def compareQueues(q1: str, q2: str) -> bool:
     # exactly the same queues
     return False
 
-def binarySearch(queue: str, queueLst: list[str], compare = compareQueues) -> bool:
+def binarySearch(queue: str, queueLst: list[str], compare: Callable[[str, str], bool] = compareQueues) -> bool:
     '''
     Determine if a queue is within the list of queues with binary search
 
     Parameters:
         queue (str): A tetris format queue
         queueLst (list): A list of tetris format queues sorted by TILJSZO
+        compare (func): a compare functional obj that returns a boolean when comparing queues
 
     Returns:
         bool: Whether the queue was found in the list
