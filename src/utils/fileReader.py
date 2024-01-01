@@ -94,12 +94,11 @@ def binarySearch(text: str, lst: list[str], compare: Callable[[str, str], bool],
     low = 0
     high = len(lst)
 
-    while(low < high):
-        leastSigSum = (low % 2 + high % 2)
-        mid = (low // 2 + high // 2) + leastSigSum // 2
+    while low < high:
+        mid = low + (high - low) // 2
 
         if dir == "right":
-            mid += leastSigSum % 2
+            mid += (high - low) % 2
 
         # check if text was found already
         if text == lst[mid]:
@@ -192,13 +191,12 @@ def getMatchingRange(text: str, lst: list[str], op: str, compare: Callable[[str,
 
     return [(startIndex, endIndex)]
 
-def queryWhere(filepath: str, columns: str, where: str = "") -> list[list[str]]:
+def queryWhere(filepath: str, where: str = "") -> list[dict]:
     '''
     Get all rows with the specific column filtering with where
 
     Parameters:
         filepath(str): path for a tsv file
-        columns(str): names of columns to return deliminated by comma
         where(str): expression of in format column operator value
 
     Return:
@@ -231,16 +229,7 @@ def queryWhere(filepath: str, columns: str, where: str = "") -> list[list[str]]:
 
             db = [db[i] for i in indices]
 
-    # get only the columns
-
-    # special case for wildcard
-    if columns == "*":
-        rows = [list(x.values()) for x in db]
-    else:
-        rows = [[x[c] for c in columns.split(",")] for x in db]
-        
-    # Temp return
-    return rows
+    return db
 
 if __name__ == "__main__":
-    print(len(queryWhere("../../tsv/2ndPC.tsv", "*", "Solve %=100.00%")))
+    print(queryWhere("../../tsv/2ndPC.tsv", "Leftover=SSZO"))

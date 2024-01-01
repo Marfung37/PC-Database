@@ -3,16 +3,16 @@
 from .pieces import extendPieces
 from typing import Callable
 
-def matchingQueue(queue: str, pattern: str) -> bool:
+def matchingQueue(queue: str, pattern: str, equality: Callable[[str, str], bool] = lambda x, y: x == y) -> int:
     '''
-    Determine if a queue is within the extended pieces
+    Find where a queue is within the extended pieces
     
     Parameters:
         queue (str): A tetris format queue
         pattern (str): A pattern for extended pieces
 
     Returns:
-        bool: Whether the queue was found in the extended pieces
+        int: index where the queue was found in the extended pieces
 
     '''
 
@@ -25,7 +25,7 @@ def matchingQueue(queue: str, pattern: str) -> bool:
     # get a generator obj of the output queues
     outQueues = extendPieces(pattern)
 
-    return binarySearch(queue, list(outQueues))
+    return binarySearch(queue, list(outQueues), equality=equality)
 
 def compareQueues(q1: str, q2: str) -> bool:
     '''
@@ -65,7 +65,7 @@ def compareQueues(q1: str, q2: str) -> bool:
             return True
 
         # if piece in q1 is greater than piece in q2
-        elif pieceVals[p1] < pieceVals[p2]:
+        elif pieceVals[p1] > pieceVals[p2]:
             return False
 
         # otherwise same piece
@@ -73,29 +73,33 @@ def compareQueues(q1: str, q2: str) -> bool:
     # exactly the same queues
     return False
 
-def binarySearch(queue: str, queueLst: list[str], compare: Callable[[str, str], bool] = compareQueues) -> bool:
+def binarySearch(queue: str, 
+                 queueLst: list[str], 
+                 compare: Callable[[str, str], bool] = compareQueues, 
+                 equality: Callable[[str, str], bool] = lambda x, y: x == y) -> int:
     '''
-    Determine if a queue is within the list of queues with binary search
+    Find where a queue is found to be started with in the list of queues with binary search
 
     Parameters:
         queue (str): A tetris format queue
         queueLst (list): A list of tetris format queues sorted by TILJSZO
         compare (func): a compare functional obj that returns a boolean when comparing queues
+        equality (func): a equality functional obj that returns boolean when two queues are equal
 
     Returns:
-        bool: Whether the queue was found in the list
+        int: index where the queue was found in the list and -1 if not found
 
     '''
 
     low = 0
-    high = len(queueLst)
+    high = len(queueLst) - 1
 
-    while(low != high):
-        mid = (low + high) // 2
+    while low <= high:
+        mid = low + (high - low) // 2
 
         # check if queue was found already
-        if queue == queueLst[mid]:
-            return True
+        if equality(queueLst[mid], queue):
+            return mid
 
         # check if less than
         if compare(queue, queueLst[mid]):
@@ -103,9 +107,8 @@ def binarySearch(queue: str, queueLst: list[str], compare: Callable[[str, str], 
         else:
             low = mid + 1
 
-    # final check if the queue was found
-    return queue == queueLst[low]
+    return -1
 
 if __name__ == "__main__":
-    print(matchingQueue("TILJSZO", "*p7"))
+    print(matchingQueue("TILJSZO", "[JSZO]!{J<S||JS<Z},[TIL]!,[ILS]!{/^[^L]/}", equality=lambda x, y: x.startswith(y)))
     # print(help(matchingQueue))

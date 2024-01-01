@@ -22,3 +22,12 @@ def sortQueue(queue: str) -> str:
         str: a sorted queue following TILJSZO ordering
 
     '''
+
+    sortedQueueGen = sorted(queue, key=lambda x: PIECEVALS[x])
+    sortedQueue = ''.join(list(sortedQueueGen))
+
+    return sortedQueue
+
+
+if __name__ == "__main__":
+    print(sortQueue("TZJSITL"))

@@ -11,7 +11,7 @@
 
 # imports
 import os
-from utils.pieces import sortQueues
+from utils.sortTetris import sortQueue
 from utils.reversePieces import matchingQueue
 from utils.formulas import PCNUM2LONUM
 from utils.fileReader import queryWhere
@@ -28,7 +28,7 @@ FILENAMES = {
     8: os.path.join("..", "tsv", "8thPC.tsv"),
 }
 
-def setupFinder(pcNum: int, queue: str) -> list[str]:
+def setupFinder(pcNum: int, queue: str, previousSetup: str = "") -> list[str]:
     '''
     Basic setup finder that gives a list of ids for a setup
 
@@ -40,15 +40,36 @@ def setupFinder(pcNum: int, queue: str) -> list[str]:
         list[str]: A list of strings of ids that are valid setups
     '''
 
-    # get leftover pieces
-    leftover = queue[:PCNUM2LONUM(pcNum)]
-    print(leftover)
-    
-    rows = queryWhere(FILENAMES[pcNum], "ID,Build,Previous Setup,Setup,Next Setup,Solve %", where=f"Leftover={leftover}")
+    ids = []
 
-    print(rows)
+    # check if the previous setup match up first
+    if previousSetup:
+        rows = queryWhere(FILENAMES[pcNum], where=f"Previous Setup={previousSetup}")
+    else:
+        # get leftover pieces sorted
+        leftover = sortQueue(queue[:PCNUM2LONUM(pcNum)])
+        
+        # get the rows where the leftover matches
+        rows = queryWhere(FILENAMES[pcNum], where=f"Leftover={leftover}")
 
-    return [""]
+    # go through the rows
+    for row in rows:
+        found = False
+        index = matchingQueue(queue, row["Cover Dependence"], equality=lambda x, y: y.startswith(x))
+
+        # if the dependence is fully described
+        if row["Cover Data"] == "1":
+            # check if found in the dependence
+            if index != -1:
+                found = True
+
+        elif row["Cover Data"][index] == "1":
+            found = True
+
+        if found:
+            ids.append(row["ID"])
+
+    return ids
 
 def userInput() -> tuple[int, str]:
     '''
@@ -75,7 +96,7 @@ def main() -> None:
     '''
 
     pcNum, queue = userInput()
-    setupFinder(pcNum, queue)
+    print(setupFinder(pcNum, queue))
 
 if __name__ == "__main__":
     main()
