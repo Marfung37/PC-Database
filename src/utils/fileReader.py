@@ -191,21 +191,35 @@ def getMatchingRange(text: str, lst: list[str], op: str, compare: Callable[[str,
 
     return [(startIndex, endIndex)]
 
-def queryWhere(filepath: str, where: str = "") -> list[dict]:
+def openFile(filepath: str) -> list[dict]:
     '''
-    Get all rows with the specific column filtering with where
+    Get all rows from file as a list of dictionaries representing a row
 
     Parameters:
-        filepath(str): path for a tsv file
-        where(str): expression of in format column operator value
+        filepath (str): the filepath of a tsv database file
 
     Return:
-        list[list[str]]: list of rows with a list of corresponding columns values
+        list[dict]: list of rows from the file
     '''
 
     # get data from the file
     with open(filepath, "r") as infile:
         db = list(DictReader(infile, delimiter="\t"))
+
+    return db
+
+def queryWhere(db: list[dict], where: str = "") -> list[dict]:
+    '''
+    Get all rows with the specific column filtering with where
+
+    Parameters:
+        db (list): a list of rows in the format of a dictionary
+        where (str): expression of in format column operator value
+
+    Return:
+        list[dict]: list of rows with where filtered for
+    '''
+
 
     # parse the where
     if where:
@@ -232,4 +246,4 @@ def queryWhere(filepath: str, where: str = "") -> list[dict]:
     return db
 
 if __name__ == "__main__":
-    print(queryWhere("../../tsv/2ndPC.tsv", "Leftover=SSZO"))
+    print(queryWhere(openFile("../../tsv/2ndPC.tsv"), "Leftover=SSZO"))

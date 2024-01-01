@@ -4,7 +4,7 @@ from itertools import islice
 import csv
 import sys
 sys.path.append(path.dirname(path.realpath(__file__)) + "/utils")
-from pieces import extendPieces
+from utils.pieces import extendPieces
 
 start = 2
 
@@ -25,7 +25,7 @@ for lineNum, line in enumerate(sqlLines):
     queues = extendPieces(pieces)
     
     bitstr = ""
-    if(not line["Cover Data"] or line["Cover Data"] != '1' or True):
+    if(not line["Cover Data"] or line["Cover Data"] != '1'):
         with open("input/patterns.txt", "w") as infile:
             infile.write("\n".join(queues))
 

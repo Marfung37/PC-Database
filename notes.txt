@@ -1,0 +1,7 @@
+Possible Checks
+
+Check that cover data isn't 0
+Check that percents match what's given
+Check that mirrors seem accurate (percent within a tolerance, pieces are mirror, etc)
+Check that the build is same the pieces in the setup
+Check if that setup already exists

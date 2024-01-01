@@ -11,10 +11,11 @@
 
 # imports
 import os
+from utils.fumenUtils import getField
 from utils.sortTetris import sortQueue
 from utils.reversePieces import matchingQueue
 from utils.formulas import PCNUM2LONUM
-from utils.fileReader import queryWhere
+from utils.fileReader import queryWhere, openFile
 
 # dict of pc number to filename/paths
 FILENAMES = {
@@ -28,7 +29,7 @@ FILENAMES = {
     8: os.path.join("..", "tsv", "8thPC.tsv"),
 }
 
-def setupFinder(pcNum: int, queue: str, previousSetup: str = "") -> list[str]:
+def setupFinder(pcNum: int, queue: str, previousSetup: str = "") -> list[dict]:
     '''
     Basic setup finder that gives a list of ids for a setup
 
@@ -40,17 +41,17 @@ def setupFinder(pcNum: int, queue: str, previousSetup: str = "") -> list[str]:
         list[str]: A list of strings of ids that are valid setups
     '''
 
-    ids = []
+    foundSetups = []
+    rows = openFile(FILENAMES[pcNum])
 
-    # check if the previous setup match up first
-    if previousSetup:
-        rows = queryWhere(FILENAMES[pcNum], where=f"Previous Setup={previousSetup}")
-    else:
-        # get leftover pieces sorted
-        leftover = sortQueue(queue[:PCNUM2LONUM(pcNum)])
-        
-        # get the rows where the leftover matches
-        rows = queryWhere(FILENAMES[pcNum], where=f"Leftover={leftover}")
+    # get leftover pieces sorted
+    leftover = sortQueue(queue[:PCNUM2LONUM(pcNum)])
+    
+    # get the rows where the leftover matches
+    rows = queryWhere(rows, where=f"Leftover={leftover}")
+
+    # filter for the previous setup
+    rows = queryWhere(rows, where=f"Previous Setup={previousSetup}")
 
     # go through the rows
     for row in rows:
@@ -67,9 +68,23 @@ def setupFinder(pcNum: int, queue: str, previousSetup: str = "") -> list[str]:
             found = True
 
         if found:
-            ids.append(row["ID"])
+            foundSetups.append(row)
 
-    return ids
+    return foundSetups
+
+def displaySetups(setups: list[dict]) -> None:
+    '''
+    Displays the setups into the terminal output
+
+    Parameter:
+        setups (list[dict]): a list of rows to display
+
+    '''
+
+    for setup in setups:
+        print(getField(setup["Setup"]))
+        print(setup["Solve %"])
+        print()
 
 def userInput() -> tuple[int, str]:
     '''
@@ -96,7 +111,8 @@ def main() -> None:
     '''
 
     pcNum, queue = userInput()
-    print(setupFinder(pcNum, queue))
+    setups = setupFinder(pcNum, queue)
+    displaySetups(setups)
 
 if __name__ == "__main__":
     main()

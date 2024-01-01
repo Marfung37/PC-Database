@@ -40,12 +40,6 @@ def compareQueues(q1: str, q2: str) -> bool:
 
     '''
 
-    # comparing the lengths of the queues
-    if len(q1) < len(q2):
-        return True
-    elif len(q1) > len(q2):
-        return False
-
     # dict assigning value for each piece
     pieceVals = {
         'T': 1,
@@ -90,7 +84,6 @@ def binarySearch(queue: str,
         int: index where the queue was found in the list and -1 if not found
 
     '''
-
     low = 0
     high = len(queueLst) - 1
 
