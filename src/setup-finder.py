@@ -29,6 +29,8 @@ FILENAMES = {
     8: os.path.join("..", "tsv", "8thPC.tsv"),
 }
 
+
+
 def setupFinder(pcNum: int, queue: str, previousSetup: str = "") -> list[dict]:
     '''
     Basic setup finder that gives a list of ids for a setup
@@ -81,8 +83,43 @@ def displaySetups(setups: list[dict]) -> None:
 
     '''
 
+    class PIECECOLORS:
+        BLACK = '\033[40m'
+        MAGENTA = '\033[45m'
+        CYAN = '\033[106m'
+        DARKYELLOW = '\033[48;5;208m'
+        BLUE = '\033[44m'
+        GREEN = '\033[102m'
+        RED = '\033[101m'
+        YELLOW = '\033[103m'
+        ENDC = '\033[0m'
+
     for setup in setups:
-        print(getField(setup["Setup"]))
+        fields = getField(setup["Setup"], height=4)
+
+        # for each page put side by side
+        lines = []
+        for row in range(4):
+            line = ""
+            for field in fields:
+                part = field.split()[row]
+                part = part.replace('_', PIECECOLORS.BLACK + ' ')        
+                part = part.replace('T', PIECECOLORS.MAGENTA + ' ')        
+                part = part.replace('I', PIECECOLORS.CYAN + ' ')        
+                part = part.replace('L', PIECECOLORS.DARKYELLOW + ' ')        
+                part = part.replace('J', PIECECOLORS.BLUE + ' ')        
+                part = part.replace('S', PIECECOLORS.GREEN + ' ')        
+                part = part.replace('Z', PIECECOLORS.RED + ' ')        
+                part = part.replace('O', PIECECOLORS.YELLOW + ' ')        
+                part += PIECECOLORS.ENDC
+
+                line += part + " "
+            
+            lines.append(line)
+
+        lines = "\n".join(lines)
+
+        print(lines)
         print(setup["Solve %"])
         print()
 
