@@ -1,54 +1,53 @@
 const {decoder, encoder, Field} = require('tetris-fumen');
+const Hashmap = require('hashmap');
 
 const rowLen = 10;
 
-const pieceMappings = {
-    "T": [
-        [[0, -1], [0, 0], [-1, -1], [1, -1]],
-        [[0, -1], [0, 0], [-1, -1], [0, -2]],
-        [[1, 0], [0, 0], [2, 0], [1, -1]],
-        [[0, -1], [0, 0], [1, -1], [0, -2]]
-        ],
-    "I": [
-        [[1, 0], [0, 0], [2, 0], [3, 0]],
-        [[0, -2], [0, 0], [0, -1], [0, -3]]
-        ],
-    "L": [
-        [[-1, -1], [0, 0], [-2, -1], [0, -1]],
-        [[1, -1], [0, 0], [1, 0], [1, -2]],
-        [[1, 0], [0, 0], [2, 0], [0, -1]],
-        [[0, -1], [0, 0], [0, -2], [1, -2]]
-        ],
-    "J": [
-        [[1, -1], [0, 0], [0, -1], [2, -1]],
-        [[0, -1], [0, 0], [-1, -2], [0, -2]],
-        [[1, 0], [0, 0], [2, 0], [2, -1]],
-        [[0, -1], [0, 0], [1, 0], [0, -2]]
-        ],
-    "S": [
-        [[0, -1], [0, 0], [1, 0], [-1, -1]],
-        [[1, -1], [0, 0], [0, -1], [1, -2]]
-        ],
-    "Z": [
-        [[1, -1], [0, 0], [1, 0], [2, -1]],
-        [[0, -1], [0, 0], [-1, -1], [-1, -2]]
-        ],
-    "O": [
-        [[0, -1], [0, 0], [1, 0], [1, -1]]
-        ]
-}
+const pieceMappings = new Hashmap();
+pieceMappings.set("T", [
+    [[0, -1], [0, 0], [-1, -1], [1, -1]],
+    [[0, -1], [0, 0], [-1, -1], [0, -2]],
+    [[1, 0], [0, 0], [2, 0], [1, -1]],
+    [[0, -1], [0, 0], [1, -1], [0, -2]]
+    ])
+pieceMappings.set("I", [
+    [[1, 0], [0, 0], [2, 0], [3, 0]],
+    [[0, -2], [0, 0], [0, -1], [0, -3]]
+    ])
+pieceMappings.set("L", [
+    [[-1, -1], [0, 0], [-2, -1], [0, -1]],
+    [[1, -1], [0, 0], [1, 0], [1, -2]],
+    [[1, 0], [0, 0], [2, 0], [0, -1]],
+    [[0, -1], [0, 0], [0, -2], [1, -2]]
+    ])
+pieceMappings.set("J", [
+    [[1, -1], [0, 0], [0, -1], [2, -1]],
+    [[0, -1], [0, 0], [-1, -2], [0, -2]],
+    [[1, 0], [0, 0], [2, 0], [2, -1]],
+    [[0, -1], [0, 0], [1, 0], [0, -2]]
+    ])
+pieceMappings.set("S", [
+    [[0, -1], [0, 0], [1, 0], [-1, -1]],
+    [[1, -1], [0, 0], [0, -1], [1, -2]]
+    ])
+pieceMappings.set("Z", [
+    [[1, -1], [0, 0], [1, 0], [2, -1]],
+    [[0, -1], [0, 0], [-1, -1], [-1, -2]]
+    ])
+pieceMappings.set("O", [
+    [[0, -1], [0, 0], [1, 0], [1, -1]]
+    ])
 
-const rotationDict = {
-    0: "spawn",
-    1: "left",
-    2: "reverse",
-    3: "right"
-}
+const rotationDict = new Hashmap();
+rotationDict.set(0, "spawn");
+rotationDict.set(1, "left");
+rotationDict.set(2, "reverse");
+rotationDict.set(3, "right");
 
 function checkRotation(x, y, field, piecesArr, allPiecesArr, removeLineClearBool, depth=0){
     const piece = field.at(x, y);
 
-    const rotationStates = pieceMappings[piece];
+    const rotationStates = pieceMappings.get(piece);
 
     let found = false;
     let leftoverPieces = null;
@@ -85,7 +84,7 @@ function checkRotation(x, y, field, piecesArr, allPiecesArr, removeLineClearBool
             // a rotation that works
             let operPiece = {
                 type: piece,
-                rotation: rotationDict[state],
+                rotation: rotationDict.get(state),
                 x: minoPositions[0][0],
                 y: minoPositions[0][1]
             }
@@ -204,8 +203,8 @@ function findRemainingPieces(field){
 function glueFumen(customInput=process.argv.slice(2), removeLineClearBool=true){
     var fumenCodes = [];
 
-    if(!(customInput instanceof Array)){
-        customInput = [customInput];
+    if(typeof customInput != 'object'){
+        throw new Error("Custom input for glueFumen must be an array")
     }
 
     for(let rawInput of customInput){
@@ -220,6 +219,7 @@ function glueFumen(customInput=process.argv.slice(2), removeLineClearBool=true){
         let thisGlueFumens = []; // holds the glue fumens for this fumenCode
         for(let pageNum = 0; pageNum < inputPages.length; pageNum++){
             let field = inputPages[pageNum].field;
+            if(removeLineClearBool) field = removeLineClears(field);
             const height = field.str().split("\n").length - 1;
             let emptyField = makeEmptyField(field, height);
             allPiecesArr = []
@@ -253,7 +253,7 @@ function glueFumen(customInput=process.argv.slice(2), removeLineClearBool=true){
         }
 
         // add the glue fumens for this code to all the fumens
-        allFumens.push(...thisGlueFumens)
+        allFumens.push(thisGlueFumens.join(" "))
     }
     if(fumenCodes.length > allFumens.length){
         console.log("Warning: " + fumenIssues + " fumens couldn't be glued");

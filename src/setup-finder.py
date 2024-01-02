@@ -11,6 +11,7 @@
 
 # imports
 import os
+from utils.directories import ROOT
 from utils.fumenUtils import getField
 from utils.sortTetris import sortQueue
 from utils.reversePieces import matchingQueue
@@ -19,14 +20,14 @@ from utils.fileReader import queryWhere, openFile
 
 # dict of pc number to filename/paths
 FILENAMES = {
-    1: os.path.join("..", "tsv", "1stPC.tsv"),
-    2: os.path.join("..", "tsv", "2ndPC.tsv"),
-    3: os.path.join("..", "tsv", "3rdPC.tsv"),
-    4: os.path.join("..", "tsv", "4thPC.tsv"),
-    5: os.path.join("..", "tsv", "5thPC.tsv"),
-    6: os.path.join("..", "tsv", "6thPC.tsv"),
-    7: os.path.join("..", "tsv", "7thPC.tsv"),
-    8: os.path.join("..", "tsv", "8thPC.tsv"),
+    1: os.path.join(ROOT, "tsv", "1stPC.tsv"),
+    2: os.path.join(ROOT, "tsv", "2ndPC.tsv"),
+    3: os.path.join(ROOT, "tsv", "3rdPC.tsv"),
+    4: os.path.join(ROOT, "tsv", "4thPC.tsv"),
+    5: os.path.join(ROOT, "tsv", "5thPC.tsv"),
+    6: os.path.join(ROOT, "tsv", "6thPC.tsv"),
+    7: os.path.join(ROOT, "tsv", "7thPC.tsv"),
+    8: os.path.join(ROOT, "tsv", "8thPC.tsv"),
 }
 
 
@@ -84,14 +85,14 @@ def displaySetups(setups: list[dict]) -> None:
     '''
 
     class PIECECOLORS:
-        BLACK = '\033[40m'
-        MAGENTA = '\033[45m'
-        CYAN = '\033[106m'
-        DARKYELLOW = '\033[48;5;208m'
-        BLUE = '\033[44m'
-        GREEN = '\033[102m'
-        RED = '\033[101m'
-        YELLOW = '\033[103m'
+        BLACK = '\033[30;40m'
+        MAGENTA = '\033[35;45m'
+        CYAN = '\033[96;106m'
+        DARKYELLOW = '\033[38;5;208;48;5;208m'
+        BLUE = '\033[34;44m'
+        GREEN = '\033[92;102m'
+        RED = '\033[91;101m'
+        YELLOW = '\033[93;103m'
         ENDC = '\033[0m'
 
     for setup in setups:
@@ -103,14 +104,14 @@ def displaySetups(setups: list[dict]) -> None:
             line = ""
             for field in fields:
                 part = field.split()[row]
-                part = part.replace('_', PIECECOLORS.BLACK + ' ')        
-                part = part.replace('T', PIECECOLORS.MAGENTA + ' ')        
-                part = part.replace('I', PIECECOLORS.CYAN + ' ')        
-                part = part.replace('L', PIECECOLORS.DARKYELLOW + ' ')        
-                part = part.replace('J', PIECECOLORS.BLUE + ' ')        
-                part = part.replace('S', PIECECOLORS.GREEN + ' ')        
-                part = part.replace('Z', PIECECOLORS.RED + ' ')        
-                part = part.replace('O', PIECECOLORS.YELLOW + ' ')        
+                part = part.replace('_', PIECECOLORS.BLACK + '\u9606')        
+                part = part.replace('T', PIECECOLORS.MAGENTA + '\u9606')        
+                part = part.replace('I', PIECECOLORS.CYAN + '\u9606')        
+                part = part.replace('L', PIECECOLORS.DARKYELLOW + '\u9606')        
+                part = part.replace('J', PIECECOLORS.BLUE + '\u9606')        
+                part = part.replace('S', PIECECOLORS.GREEN + '\u9606')        
+                part = part.replace('Z', PIECECOLORS.RED + '\u9606')        
+                part = part.replace('O', PIECECOLORS.YELLOW + '\u9606')        
                 part += PIECECOLORS.ENDC
 
                 line += part + " "

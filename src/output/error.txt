@@ -1,0 +1,24 @@
+# DateTime: 2024/01/01 22:43:23
+# Version: 1.42
+# command: cover -t v115@vhDx/IKJJfKJ0FJ -K /home/mar/Documents/PCstuff/PC-Database/src/solution-finder-1.42/kicks/jstris180.properties-d 180 -o /home/mar/Documents/PCstuff/PC-Database/src/output/cover.csv -pp /home/mar/Documents/PCstuff/PC-Database/src/input/patterns.txt
+# Error message summary:
+  * Not found a kick file: /home/mar/Documents/PCstuff/PC-Database/src/solution-finder-1.42/kicks/jstris180.properties-d [IllegalArgumentException]
+
+
+------------------------------
+# Stack trace:
+------------------------------
+
+java.lang.IllegalArgumentException: Not found a kick file: /home/mar/Documents/PCstuff/PC-Database/src/solution-finder-1.42/kicks/jstris180.properties-d
+	at entry.common.option.OptionsFacade.lambda$createNamedMinoRotationSupplier$0(OptionsFacade.java:27)
+	at java.base/java.util.Optional.orElseThrow(Optional.java:403)
+	at entry.common.option.OptionsFacade.createNamedMinoRotationSupplier(OptionsFacade.java:27)
+	at entry.cover.CoverSettings.setKicks(CoverSettings.java:261)
+	at java.base/java.util.Optional.ifPresent(Optional.java:178)
+	at entry.cover.CoverSettingParser.parse(CoverSettingParser.java:183)
+	at entry.common.SettingParser.parse(SettingParser.java:43)
+	at entry.EntryPointMain.getCoverEntryPoint(EntryPointMain.java:251)
+	at entry.EntryPointMain.createEntryPoint(EntryPointMain.java:211)
+	at entry.EntryPointMain.main(EntryPointMain.java:86)
+	at Main.main(Main.java:5)
+==============================
