@@ -5,7 +5,7 @@
 # Return a list of possible setups
 #
 # Additional Notes
-# For oqb setups, need to ask for queue again (not implemented)
+# For oqb setups, need to ask for queue again (somewhat implemented)
 # Try to have images of the setups for ease (somewhat implemented)
 #
 
@@ -46,11 +46,12 @@ def setupFinder(pcNum: int, queue: str, previousSetup: str = "") -> list[dict]:
         found = False
         index = matchingQueue(queue, row["Cover Dependence"], equality=lambda x, y: y.startswith(x))
 
+        if index == -1:
+            continue
+
         # if the dependence is fully described
         if row["Cover Data"] == "1":
-            # check if found in the dependence
-            if index != -1:
-                found = True
+            found = True
 
         elif row["Cover Data"][index] == "1":
             found = True
@@ -60,13 +61,15 @@ def setupFinder(pcNum: int, queue: str, previousSetup: str = "") -> list[dict]:
 
     return foundSetups
 
-def displaySetups(setups: list[dict]) -> None:
+def displaySetups(setups: list[dict]) -> int:
     '''
     Displays the setups into the terminal output
 
     Parameter:
         setups (list[dict]): a list of rows to display
 
+    Returns:
+        int: user input for which setup they chose
     '''
 
     class PIECECOLORS:
@@ -80,7 +83,11 @@ def displaySetups(setups: list[dict]) -> None:
         YELLOW = '\033[93;103m'
         ENDC = '\033[0m'
 
-    for setup in setups:
+    for num, setup in enumerate(setups):
+        num += 1
+
+        # print the setup's ID
+        print(setup["ID"])
         fields = getField(setup["Setup"], height=4)
 
         # for each page put side by side
@@ -106,8 +113,24 @@ def displaySetups(setups: list[dict]) -> None:
         lines = "\n".join(lines)
 
         print(lines)
-        print(setup["Solve %"])
+        print(f"{num}. {setup['Solve %']}")
         print()
+
+    choice: str = input("Enter which setup you chose: ")
+    choice_int: int = 0
+
+    good_user_input = False
+    
+    while not good_user_input:
+        if choice.isnumeric():
+            choice_int: int = int(choice)
+            if 1 <= choice_int <= len(setups):
+                good_user_input = True
+
+    choice_int -= 1
+    if setups[choice_int]["Next Setup"]: 
+        return choice_int
+    return -1
 
 def userInput() -> tuple[int, str]:
     '''
@@ -134,8 +157,22 @@ def main() -> None:
     '''
 
     pcNum, queue = userInput()
-    setups = setupFinder(pcNum, queue)
-    displaySetups(setups)
 
+    # DEBUG
+    # pcNum = 3
+    # queue = "TTILJSZ"
+    #
+    setups = setupFinder(pcNum, queue)
+    choice = displaySetups(setups)
+
+    while choice != -1:
+        # Ask user for queue
+        queue += input("Enter the additional pieces you can see in order: ")
+    
+        setups = setupFinder(pcNum, queue, previousSetup=setups[choice]["ID"])
+        choice = displaySetups(setups)
+    
+    print("Now just solve!")
+    
 if __name__ == "__main__":
     main()
