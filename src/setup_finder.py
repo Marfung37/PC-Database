@@ -61,6 +61,25 @@ def setupFinder(pcNum: int, queue: str, previousSetup: str = "") -> list[dict]:
 
     return foundSetups
 
+def bestChanceSetups(setups: list[dict]):
+    null_setups = []
+    best_setups = []
+    best_chance = 0
+    for setup in setups:
+        if setup["Solve %"] == "NULL":
+            null_setups.append(setup)
+            continue
+
+        setup_percent = float(setup["Solve %"][:-1])
+        if best_chance < setup_percent:
+            best_chance = setup_percent
+            best_setups = [setup]
+        elif best_chance == setup_percent:
+            best_setups.append(setup)
+    best_setups += null_setups
+
+    return best_setups
+
 def displaySetups(setups: list[dict]) -> int:
     '''
     Displays the setups into the terminal output
@@ -83,8 +102,12 @@ def displaySetups(setups: list[dict]) -> int:
         YELLOW = '\033[93;103m'
         ENDC = '\033[0m'
 
+    null_setup = False
     for num, setup in enumerate(setups):
-        num += 1
+        num += 1 # increment so num is 1-len(setup)
+
+        if setup["Solve %"] == "NULL":
+            null_setup = True
 
         # print the setup's ID
         print(setup["ID"])
@@ -116,20 +139,22 @@ def displaySetups(setups: list[dict]) -> int:
         print(f"{num}. {setup['Solve %']}")
         print()
 
-    choice: str = input("Enter which setup you chose: ")
-    choice_int: int = 0
+    if null_setup:
+        choice: str = input("Enter which setup you chose: ")
+        choice_int: int = 0
 
-    good_user_input = False
-    
-    while not good_user_input:
-        if choice.isnumeric():
-            choice_int: int = int(choice)
-            if 1 <= choice_int <= len(setups):
-                good_user_input = True
+        good_user_input = False
+        
+        while not good_user_input:
+            if choice.isnumeric():
+                choice_int: int = int(choice)
+                if 1 <= choice_int <= len(setups):
+                    good_user_input = True
 
-    choice_int -= 1
-    if setups[choice_int]["Next Setup"]: 
-        return choice_int
+        choice_int -= 1
+        if setups[choice_int]["Next Setup"]: 
+            return choice_int
+
     return -1
 
 def userInput() -> tuple[int, str]:
@@ -148,6 +173,12 @@ def userInput() -> tuple[int, str]:
     # Ask user for queue
     queue = input("Enter the queue you can see: ")
 
+    # special case for 1st pc for greater ease
+    if pcNum == 1 and len(queue) == 6:
+        bag = set("TILJSZO")
+        last_piece = (bag - set(queue)).pop()
+        queue += last_piece
+
     return pcNum, queue
 
 
@@ -161,8 +192,10 @@ def main() -> None:
     # DEBUG
     # pcNum = 3
     # queue = "TTILJSZ"
-    #
+    
     setups = setupFinder(pcNum, queue)
+    setups = bestChanceSetups(setups)
+
     choice = displaySetups(setups)
 
     while choice != -1:
@@ -170,6 +203,7 @@ def main() -> None:
         queue += input("Enter the additional pieces you can see in order: ")
     
         setups = setupFinder(pcNum, queue, previousSetup=setups[choice]["ID"])
+        setups = bestChanceSetups(setups)
         choice = displaySetups(setups)
     
     print("Now just solve!")
