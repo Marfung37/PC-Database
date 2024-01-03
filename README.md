@@ -10,3 +10,11 @@ Currently, there are 4 scripts written
 * Check Percents - check_percents.py
 
 The last 2 doesn't have the user input yet
+
+# Future Plans
+Hopefully, all checks in notes.txt will be added  
+If you can think of more checks, please let me know!
+
+Then, a method to adding setups to the database should be included  
+
+
