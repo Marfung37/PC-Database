@@ -1,13 +1,14 @@
-import subprocess
-from os import system, path
-import csv
-import sys
+from utils.pieces import sortQueues, extendPieces
 
-# import pieces from utils
-sys.path.append(path.dirname(path.realpath(__file__)) + "/utils")
-from pieces import sortQueues, extendPieces
+def addQueueToTree(covering_tree: dict, queue: str, percent: float):
+    '''
+    Adds a queue with its percent to a tree for each queue
 
-def addQueueToTree(queue, percent):
+    Parameters:
+
+
+    '''
+        
     node = coveringTree
     queueIndex = 0
     piece = queue[queueIndex]

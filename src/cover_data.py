@@ -2,13 +2,11 @@ import subprocess
 from csv import reader
 from os import system, path, devnull
 
-from utils.directories import ROOT
+from utils.directories import ROOT, SFINDERPATH, KICKPATH
 from utils.pieces import extendPieces
 from utils.fileReader import queryWhere
 
 GLUEFUMENPATH = path.join(ROOT, "src", "utils", "glueFumen.js")
-SFINDERPATH = path.join(ROOT, "src", "solution-finder-1.42", "sfinder.jar")
-KICKPATH = path.join(ROOT, "src", "solution-finder-1.42", "kicks", "jstris180.properties")
 PATTERNSPATH = path.join(ROOT, "src", "input", "patterns.txt")
 COVERPATH = path.join(ROOT, "src", "output", "cover.csv")
 

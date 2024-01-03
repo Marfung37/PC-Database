@@ -7,3 +7,6 @@ def get_root_dir():
     return  os.path.normpath(os.path.join(os.path.dirname(script), "../.."))
 
 ROOT = get_root_dir()
+
+SFINDERPATH = os.path.join(ROOT, "src", "solution-finder-1.42", "sfinder.jar")
+KICKPATH = os.path.join(ROOT, "src", "solution-finder-1.42", "kicks", "jstris180.properties")
