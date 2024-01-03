@@ -31,10 +31,15 @@ def getCoverData(db: list[dict], overwrite: bool = False) -> list[dict]:
             previousCoverData = row["Cover Data"]
 
         # get the dependency
-        pattern = [row["Cover Dependence"]]
+        pattern = row["Cover Dependence"]
 
         # get the queues from the pattern
-        queues = extendPieces(pattern)
+        try:
+            queues = extendPieces(pattern)
+        except:
+            # error
+            print(f"Unable to process '{pattern}' for id '{row['ID']}'")
+            continue
 
         # get the corresponding order of setups to do
         setups = getOrderOfSetups(row, db)
@@ -155,7 +160,7 @@ def getOrderOfSetups(row: dict, db: list[dict]) -> list[str]:
 if __name__ == "__main__":
     from utils.fileReader import openFile
 
-    db = openFile(path.join(ROOT, "tsv", "2ndPC.tsv"))
-    db = queryWhere(db, where="Leftover=ILJO")
+    db = openFile(path.join(ROOT, "tsv", "3rdPC.tsv"))
+    db = queryWhere(db, where="Leftover=T")
 
     db = getCoverData(db)

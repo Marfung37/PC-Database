@@ -92,7 +92,7 @@ def binarySearch(text: str, lst: list[str], compare: Callable[[str, str], bool],
     '''
 
     low = 0
-    high = len(lst)
+    high = len(lst) - 1
 
     while low < high:
         mid = low + (high - low) // 2

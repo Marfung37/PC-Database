@@ -199,7 +199,7 @@ def average_percent(db: list[dict], general_pattern: str) -> dict:
 
     return read_tree_stats(covering_tree, general_pattern)
    
-def display_stats(result_stats: dict):
+def display_stats(result_stats: dict, display_not_covered: bool = False, display_worst: bool = False):
     '''
     Display the statistics from running average percent
 
@@ -207,24 +207,66 @@ def display_stats(result_stats: dict):
         result_stats (dict): dictionary with various stats from running average percent
     '''
 
-    # print("Not Covered")
-    # print("\n".join(result_stats["Not Covered Queues"]))
+    if display_not_covered:
+        print("Not Covered")
+        print("\n".join(result_stats["Not Covered Queues"]))
+    
+    if display_worst:
+        print("Worst Queues")
+        print("\n".join(result_stats["Worst Queues"]))
 
-    # print("Worst Queues")
-    # print("\n".join(result_stats["Worst Queues"]))
     print(f"Worst Percent: {result_stats['Worst Percent']} [{str(result_stats['Worst Fraction'])}]")
 
     cover_fraction = '/'.join(map(str, result_stats['Cover Fraction']))
-    print(f"Cover: {result_stats['Cover Percent']} [{cover_fraction}]")
+    print(f"Cover Percent: {result_stats['Cover Percent']} [{cover_fraction}]")
+
     print(f"Average Percent: {result_stats['Average Percent']} [{str(result_stats['Average Fraction'])}]")
 
-if __name__ == "__main__":
-    import os
+def user_input() -> tuple[int, str, str, bool, bool]:
+    '''
+    Barebones user input
+    
+    Returns:
+        int: An integer 1-8 representing the pc number
+        str: A filter with column name and value
+        str: A string that represents the general pattern
 
-    from utils.directories import ROOT
+    '''
+
+    # Ask user for pc number
+    pc_num = int(input("Enter the PC number: "))
+
+    # Ask user if want to filter for anything
+    filter_char = input(f"Want to filter from PC {pc_num} (Y/n): ")
+
+    where_str = ""
+    if filter_char.lower() != "n":
+        where_str = input("Enter filter string (Ex: Leftover=ILJO): ")
+
+    # Ask user for queue
+    general_pattern = input("Enter the general pattern these setups should cover: ")
+
+    # Ask user if want queues not covered
+    not_covered = input("Want to display queues not covered (y/N): ").lower() == 'y'
+
+    # Ask user if want worst queues
+    worst_queues = input("Want to display worst percent queues (y/N): ").lower() == 'y'
+
+    return pc_num, where_str, general_pattern, not_covered, worst_queues
+
+def main():
+    '''Main function to handle user input and display output'''
+
+    from utils.directories import FILENAMES
     from utils.fileReader import openFile, queryWhere
+    
+    pc_num, where_str, general_pattern, not_covered, worst_queues = user_input()
 
-    db = openFile(os.path.join(ROOT, "tsv", "1stPC.tsv"))
-    db = queryWhere(db, where="Previous Setup=")
+    db = openFile(FILENAMES[pc_num])
+    db = queryWhere(db, where=where_str)
 
-    display_stats(average_percent(db, "*p7,*p4"))
+    display_stats(average_percent(db, general_pattern), display_not_covered=not_covered, display_worst=worst_queues)
+
+
+if __name__ == "__main__":
+    main()

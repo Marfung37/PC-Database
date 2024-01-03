@@ -26,6 +26,10 @@ def calculate_percent_in_range(db: list[dict], line_start: int, line_end: int, t
         pieces = line["Pieces"]
         percent = line["Solve %"]
 
+        # continue if the pieces are NULL
+        if pieces == 'NULL':
+            continue
+
         # split by colon for each
         pieces = map("".join, re.findall("(.+?{.*?}):|([^{}]+?):|(.+?)$", pieces))
         
@@ -49,7 +53,7 @@ def calculate_percent_in_range(db: list[dict], line_start: int, line_end: int, t
                 percent_cmd = f"java -jar {SFINDERPATH} percent -t {setup} -pp {pattern_filepath} -P {page + 1} -d 180 -K {KICKPATH} 2>{devnull}".split()
                 percent_out = subprocess.check_output(percent_cmd).decode().split("\n")
 
-            except subprocess.CalledProcessError:
+            except:
                 # print out error message
                 print(f"{line_num}: Had issues running percent")
                 print(f"extendedPieces '{pattern}' > input/patterns.txt; java -jar sfinder.jar percent -t {setup} -d 180")
@@ -89,7 +93,6 @@ def calculate_percent_in_range(db: list[dict], line_start: int, line_end: int, t
        
         # if there was an error with this line skip it
         if error:
-            line_num += 1
             continue
        
         # calculate the percent
@@ -108,8 +111,6 @@ def calculate_percent_in_range(db: list[dict], line_start: int, line_end: int, t
             # write into the db
             line["Solve %"] = calc_percent
             line["Fraction"] = fraction
-        
-        line_num += 1
     
     print(f'Thread {thread_num} finished')
     
@@ -155,7 +156,7 @@ if __name__ == "__main__":
 
     from utils.fileReader import openFile, queryWhere
 
-    db = openFile(os.path.join(ROOT, "tsv", "1stPC.tsv"))
-    # db = queryWhere(db, where="Leftover=ILSZ")
+    db = openFile(os.path.join(ROOT, "tsv", "3rdPC.tsv"))
+    db = queryWhere(db, where="Leftover=T")
 
     check_percents(db, threads=4)

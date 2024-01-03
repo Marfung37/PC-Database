@@ -5,3 +5,5 @@ Check that percents match what's given
 Check that mirrors seem accurate (percent within a tolerance, pieces are mirror, etc)
 Check that the build is same the pieces in the setup
 Check if that setup already exists
+Check for oqb that the previous setup cover upto n length queue also seen in subsequent setup
+Check if the IDs are sorted

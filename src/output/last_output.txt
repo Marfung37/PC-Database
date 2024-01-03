@@ -1,0 +1,38 @@
+# Setup Field
+[v115@vhB2OJVSJ]
+__________
+J_______T_
+JJJ____TTT
+
+Using hold: use
+Kicks: /home/mar/documents/pcstuff/pc-database/src/solution-finder-1.42/kicks/jstris180.properties
+Drop: softdrop180
+Mode: normal
+Max Softdrop Times: -1
+Max Clear Line Times: -1
+StartingB2B: 0
+Priority: no
+Last drop: 0
+Version: 1.42
+Searching patterns:
+  TTJIL
+  TTJLI
+  TIJTL
+  TIJLT
+  TLJTI
+  ... and more, total 12 lines
+
+Searching pattern size ( no dup. ) = 12
+
+# Calculate
+  -> Stopwatch start
+     ... calculating
+     ... done
+  -> Stopwatch stop : avg.time = 11 ms [1 counts]
+
+# Output
+success:
+100.00 % [12/12]: http://fumen.zui.jp/?v115@vhB2OJVSJ
+>>>
+OR  = 100.00 % [12/12]
+AND = 100.00 % [12/12]

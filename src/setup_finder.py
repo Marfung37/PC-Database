@@ -5,32 +5,17 @@
 # Return a list of possible setups
 #
 # Additional Notes
-# For oqb setups, need to ask for queue again
-# Try to have images of the setups for ease
+# For oqb setups, need to ask for queue again (not implemented)
+# Try to have images of the setups for ease (somewhat implemented)
 #
 
 # imports
-import os
-from utils.directories import ROOT
+from utils.directories import FILENAMES
 from utils.fumenUtils import getField
 from utils.sortTetris import sortQueue
 from utils.reversePieces import matchingQueue
 from utils.formulas import PCNUM2LONUM
 from utils.fileReader import queryWhere, openFile
-
-# dict of pc number to filename/paths
-FILENAMES = {
-    1: os.path.join(ROOT, "tsv", "1stPC.tsv"),
-    2: os.path.join(ROOT, "tsv", "2ndPC.tsv"),
-    3: os.path.join(ROOT, "tsv", "3rdPC.tsv"),
-    4: os.path.join(ROOT, "tsv", "4thPC.tsv"),
-    5: os.path.join(ROOT, "tsv", "5thPC.tsv"),
-    6: os.path.join(ROOT, "tsv", "6thPC.tsv"),
-    7: os.path.join(ROOT, "tsv", "7thPC.tsv"),
-    8: os.path.join(ROOT, "tsv", "8thPC.tsv"),
-}
-
-
 
 def setupFinder(pcNum: int, queue: str, previousSetup: str = "") -> list[dict]:
     '''
