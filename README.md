@@ -1,5 +1,5 @@
 # PC-Database
-SQL based database of all pc setups
+SQL* (currently just tsv files) based database of all pc setups
 
 # Scripts
 Currently, there are 4 scripts written
