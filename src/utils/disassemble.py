@@ -131,6 +131,10 @@ def make_empty_field(field):
     return field
 
 def disassemble(fumen_codes, print_error=True, keep_invalid=True):
+    # if fumen codes is just one fumen
+    if isinstance(fumen_codes, str):
+        fumen_codes = [fumen_codes]
+
     all_pieces_arr = []
     results = []
     fumen_issues = 0
@@ -140,7 +144,7 @@ def disassemble(fumen_codes, print_error=True, keep_invalid=True):
             input_pages = decode(code)
             this_disassembles = []
             for page in input_pages:
-                field, n_lineclear = remove_line_clears(page.field.copy())
+                field = page.field.copy()
                 empty_field = make_empty_field(field)
                 all_pieces_arr.clear()
 

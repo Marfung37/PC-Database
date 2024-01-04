@@ -17,6 +17,22 @@ from utils.reversePieces import matchingQueue
 from utils.formulas import PCNUM2LONUM
 from utils.fileReader import queryWhere, openFile
 
+# color of pieces when printed out to terminal using ANSI color codes
+class PIECECOLORS:
+    BLACK = '\033[30;40m'
+    MAGENTA = '\033[35;45m'
+    CYAN = '\033[96;106m'
+    ORANGE = '\033[38;5;208;48;5;208m'
+    BLUE = '\033[34;44m'
+    GREEN = '\033[92;102m'
+    RED = '\033[91;101m'
+    YELLOW = '\033[93;103m'
+    ENDC = '\033[0m'
+
+# a square shaped character that leads to better displayed setups
+SQUARECHAR = '\u9606'
+
+
 def setupFinder(pcNum: int, queue: str, previousSetup: str = "") -> list[dict]:
     '''
     Basic setup finder that gives a list of ids for a setup
@@ -93,17 +109,6 @@ def displaySetups(setups: list[dict]) -> int:
         int: user input for which setup they chose
     '''
 
-    class PIECECOLORS:
-        BLACK = '\033[30;40m'
-        MAGENTA = '\033[35;45m'
-        CYAN = '\033[96;106m'
-        DARKYELLOW = '\033[38;5;208;48;5;208m'
-        BLUE = '\033[34;44m'
-        GREEN = '\033[92;102m'
-        RED = '\033[91;101m'
-        YELLOW = '\033[93;103m'
-        ENDC = '\033[0m'
-
     null_setup = False
     for num, setup in enumerate(setups):
         num += 1 # increment so num is 1-len(setup)
@@ -121,14 +126,14 @@ def displaySetups(setups: list[dict]) -> int:
             line = ""
             for field in fields:
                 part = field.split()[row]
-                part = part.replace('_', PIECECOLORS.BLACK + '\u9606')        
-                part = part.replace('T', PIECECOLORS.MAGENTA + '\u9606')        
-                part = part.replace('I', PIECECOLORS.CYAN + '\u9606')        
-                part = part.replace('L', PIECECOLORS.DARKYELLOW + '\u9606')        
-                part = part.replace('J', PIECECOLORS.BLUE + '\u9606')        
-                part = part.replace('S', PIECECOLORS.GREEN + '\u9606')        
-                part = part.replace('Z', PIECECOLORS.RED + '\u9606')        
-                part = part.replace('O', PIECECOLORS.YELLOW + '\u9606')        
+                part = part.replace('_', PIECECOLORS.BLACK      + SQUARECHAR)        
+                part = part.replace('T', PIECECOLORS.MAGENTA    + SQUARECHAR)        
+                part = part.replace('I', PIECECOLORS.CYAN       + SQUARECHAR)        
+                part = part.replace('L', PIECECOLORS.ORANGE     + SQUARECHAR)        
+                part = part.replace('J', PIECECOLORS.BLUE       + SQUARECHAR)        
+                part = part.replace('S', PIECECOLORS.GREEN      + SQUARECHAR)        
+                part = part.replace('Z', PIECECOLORS.RED        + SQUARECHAR)        
+                part = part.replace('O', PIECECOLORS.YELLOW     + SQUARECHAR)        
                 part += PIECECOLORS.ENDC
 
                 line += part + " "
