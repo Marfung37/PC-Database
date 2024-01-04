@@ -58,8 +58,13 @@ def variable_setups(fumen: str, choice: int = 1) -> str:
              subsequent pages contain up to <choice> optional pieces
     '''
     
+    # verify pages two pages
+    pages = pf.decode(fumen)
+    if len(pages) != 2:
+        raise ValueError(f"Fumen passed to 'variable_setups' has {len(pages)} pages instead of 2 pages")
+
     # get the required and optional pages
-    required_page, optional_page = pf.decode(fumen)
+    required_page, optional_page = pages
 
     # get the optional_pieces
     optional_pieces = get_pieces(field_to_fumen(

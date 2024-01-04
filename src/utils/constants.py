@@ -19,3 +19,10 @@ PIECEVALS = {
     'Z': 6,
     'O': 7,
 }
+
+MIRRORPIECES = {
+    'L': 'J',
+    'J': 'L',
+    'S': 'Z',
+    'Z': 'S',
+}

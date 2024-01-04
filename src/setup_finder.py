@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 #
 # Basic Outline
 #
@@ -11,7 +13,7 @@
 
 # imports
 from utils.directories import FILENAMES
-from utils.fumenUtils import getField
+from utils.fumen_utils import get_field
 from utils.sortTetris import sortQueue
 from utils.reversePieces import matchingQueue
 from utils.formulas import PCNUM2LONUM
@@ -118,7 +120,7 @@ def displaySetups(setups: list[dict]) -> int:
 
         # print the setup's ID
         print(setup["ID"])
-        fields = getField(setup["Setup"], height=4)
+        fields = get_field(setup["Setup"], height=4)
 
         # for each page put side by side
         lines = []
