@@ -1,12 +1,12 @@
 import subprocess
 from csv import reader
-from os import system, path, devnull
+from os import path
 
 from utils.directories import ROOT, SFINDERPATH, KICKPATH
 from utils.pieces import extendPieces
 from utils.fileReader import queryWhere
+from utils.disassemble import disassemble
 
-GLUEFUMENPATH = path.join(ROOT, "src", "utils", "glueFumen.js")
 PATTERNSPATH = path.join(ROOT, "src", "input", "patterns.txt")
 COVERPATH = path.join(ROOT, "src", "output", "cover.csv")
 
@@ -52,15 +52,12 @@ def getCoverData(db: list[dict], overwrite: bool = False) -> list[dict]:
             infile.write("\n".join(queues))
         
         # get the glue fumen verison of the setups
-        glueCmd = f"node {GLUEFUMENPATH} {' '.join(setups)}".split()
-        glueP = subprocess.Popen(glueCmd, stdout=subprocess.PIPE)
-        glueFumens = glueP.stdout.read().decode().rstrip().split("\n")
-        glueFumens = list(filter(lambda x: not x.startswith("Warning: "), glueFumens))
+        glueFumens = disassemble(setups) 
         
         # run cover on the setup fumens
-        sfinderCmd = f"java -jar {SFINDERPATH} cover -t '{' '.join(glueFumens)}' -K {KICKPATH} " \
-                     f"-d 180 -o {COVERPATH} -pp {PATTERNSPATH} > {devnull}"
-        system(sfinderCmd)
+        sfinderCmd = f"java -jar {SFINDERPATH} cover -t '{' '.join(map(' '.join, glueFumens))}' -K {KICKPATH} " \
+                     f"d 180 -o {COVERPATH} -pp {PATTERNSPATH}"
+        subprocess.run(sfinderCmd.split(), stdout = subprocess.DEVNULL)
         
         # open the csv file
         outfile = open(COVERPATH, "r")
@@ -76,10 +73,10 @@ def getCoverData(db: list[dict], overwrite: bool = False) -> list[dict]:
 
             # go through all fumens, if all work then this queue is covered by the setup
             andBool = True
-            for fumen in glueFumens:
+            for fumens in glueFumens:
                 # go through for each page of the fumen
                 orBool = False
-                for _ in fumen.split(" "):
+                for _ in fumens:
                     orBool = orBool or line[fumenNum] == "O"
                     fumenNum += 1
                 
@@ -99,12 +96,13 @@ def getCoverData(db: list[dict], overwrite: bool = False) -> list[dict]:
         # check for error
         if "1" not in bitstr:
             # should at least cover one queue
-            print(f"{row['ID']} cover dependency is written improperly that the setup covers none of the queues")
+            print(f"{row['ID']} return a cover of 0%")
+            print(f"Cover dependency is written improperly or incorrect previous setup")
             continue
 
         # check if the cover data before is different after computing it
         if previousCoverData and previousCoverData != bitstr:
-            print(f"{row['ID']} previous cover data was {previousCoverData} but after computing it, it is {bitstr}")
+            print(f"{row['ID']} previous cover data differ from the new calculated value {previousCoverData} -> {bitstr}")
             
             # overwrite
             if overwrite:
@@ -142,8 +140,12 @@ def getOrderOfSetups(row: dict, db: list[dict]) -> list[str]:
     # go through the previous setups
     while previousSetupID:
         
-        # find the row that had the previous setup id
-        row = queryWhere(db, where=f"ID={previousSetupID}")[0]
+        try:
+            # find the row that had the previous setup id
+            row = queryWhere(db, where=f"ID={previousSetupID}")[0]
+        except:
+            # error
+            raise ValueError(f"The previous setup {previousSetupID} was not found")
 
         # get the fumen and previous setup for this row
         fumen = row["Setup"]
@@ -159,8 +161,19 @@ def getOrderOfSetups(row: dict, db: list[dict]) -> list[str]:
     
 if __name__ == "__main__":
     from utils.fileReader import openFile
+    import csv
 
-    db = openFile(path.join(ROOT, "tsv", "3rdPC.tsv"))
-    db = queryWhere(db, where="Leftover=T")
+    db = openFile(path.join(ROOT, "tsv", "2ndPC.tsv"))
+    # db = queryWhere(db, where="Leftover=T")
 
-    db = getCoverData(db)
+    db = getCoverData(db, overwrite=True)
+
+    outfile = open("output/cover_data.tsv", "w")
+
+    fieldnames = db[0].keys()
+    writer = csv.DictWriter(outfile, fieldnames=fieldnames, delimiter='\t')
+
+    writer.writeheader()
+    writer.writerows(db)
+
+    outfile.close()

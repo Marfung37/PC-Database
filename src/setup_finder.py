@@ -29,6 +29,8 @@ def setupFinder(pcNum: int, queue: str, previousSetup: str = "") -> list[dict]:
         list[str]: A list of strings of ids that are valid setups
     '''
 
+    queue = queue.upper()
+
     foundSetups = []
     rows = openFile(FILENAMES[pcNum])
 
@@ -182,9 +184,12 @@ def userInput() -> tuple[int, str]:
     return pcNum, queue
 
 
-def main() -> None:
+def main(continuous: bool = False) -> None:
     '''
     Main function to run rest of program
+
+    Parameter:
+        continuous (bool): assumes user will go to next pc
     '''
 
     pcNum, queue = userInput()
@@ -193,20 +198,34 @@ def main() -> None:
     # pcNum = 3
     # queue = "TTILJSZ"
     
-    setups = setupFinder(pcNum, queue)
-    setups = bestChanceSetups(setups)
-
-    choice = displaySetups(setups)
-
-    while choice != -1:
-        # Ask user for queue
-        queue += input("Enter the additional pieces you can see in order: ")
-    
-        setups = setupFinder(pcNum, queue, previousSetup=setups[choice]["ID"])
+    while True:    
+        setups = setupFinder(pcNum, queue)
         setups = bestChanceSetups(setups)
+
         choice = displaySetups(setups)
-    
-    print("Now just solve!")
-    
+
+        while choice != -1:
+            # Ask user for queue
+            queue += input("Enter the additional pieces you can see in order: ")
+        
+            setups = setupFinder(pcNum, queue, previousSetup=setups[choice]["ID"])
+            setups = bestChanceSetups(setups)
+            choice = displaySetups(setups)
+        
+        print("Now just solve!")
+        
+        if continuous:
+            # Ask user for queue
+            queue = input("Enter the queue you can see: ")
+            
+            pcNum += 1
+            if pcNum == 8:
+                pcNum = 1
+
+        else:
+            # just break if not continuous
+            break
+            
+        
 if __name__ == "__main__":
-    main()
+    main(continuous=True)

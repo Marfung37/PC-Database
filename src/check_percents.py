@@ -1,7 +1,6 @@
 import re
 import threading
 import subprocess
-from os import devnull
 
 from utils.pieces import extendPieces
 from utils.directories import ROOT, SFINDERPATH, KICKPATH
@@ -45,13 +44,18 @@ def calculate_percent_in_range(db: list[dict], line_start: int, line_end: int, t
                 queues = extendPieces(pattern)
 
                 # put the queues into a patterns file
-                pattern_filepath = os.path.join(ROOT, "src", "input", f"patterns_{thread_num}")
+                pattern_filepath = os.path.join(ROOT, "src", "input", f"patterns_{thread_num}.txt")
                 with open(pattern_filepath, "w") as infile:
                     infile.write("\n".join(queues))
     
                 # run the percent and get the output
-                percent_cmd = f"java -jar {SFINDERPATH} percent -t {setup} -pp {pattern_filepath} -P {page + 1} -d 180 -K {KICKPATH} 2>{devnull}".split()
-                percent_out = subprocess.check_output(percent_cmd).decode().split("\n")
+                percent_cmd = f"java -jar {SFINDERPATH} percent -t {setup} -pp {pattern_filepath} -P {page + 1} -d 180 -K {KICKPATH}".split()
+                percent_out = subprocess.run(
+                    percent_cmd, 
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.DEVNULL,
+                    universal_newlines=True
+                ).stdout.split('\n')
 
             except:
                 # print out error message
