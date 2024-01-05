@@ -22,7 +22,7 @@ def get_mirror_setup(db: list[dict], row: dict) -> dict:
 
     # get the mirror of the leftover
     mirror_row_leftover = mirror_queue(row["Leftover"])
-
+    
     # if the mirror leftover is the same as the row
     # they mirror setup should in theory be itself
     # this function will still compute it in case the setup is elsewhere
@@ -35,7 +35,7 @@ def get_mirror_setup(db: list[dict], row: dict) -> dict:
     possible_setups = queryWhere(db, f"Leftover={mirror_row_leftover}")
 
     # filter db for the fumen
-    possible_setups = queryWhere(db, f"Setup={mirror_row_fumen}", equals=permutated_equals)
+    possible_setups = queryWhere(possible_setups, f"Setup={mirror_row_fumen}", equals=permutated_equals)
 
     # if there's no possible setups
     if len(possible_setups) == 0:
@@ -111,6 +111,10 @@ def check_mirrors(db: list[dict],
         if row_checked[row_index]:
             continue
 
+        # check if the id and the mirror are the same as an error
+        if row["ID"] == row["Mirror"] and print_errors:
+            print(f"{row['ID']} has its mirror set to itself")
+
         # get the mirror of this row
         try:
             mirror_row = get_mirror_setup(db, row)
@@ -170,6 +174,6 @@ if __name__ == "__main__":
     from utils.directories import FILENAMES
     from utils.fileReader import openFile, queryWhere
 
-    db = openFile(FILENAMES[2])
+    db = openFile(FILENAMES[8])
 
     check_mirrors(db, print_errors=True)

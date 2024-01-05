@@ -35,10 +35,15 @@ def getCoverData(db: list[dict], overwrite: bool = False) -> list[dict]:
 
         # get the queues from the pattern
         try:
-            queues = extendPieces(pattern)
+            queues = list(extendPieces(pattern))
         except:
             # error
             print(f"Unable to process '{pattern}' for id '{row['ID']}'")
+            continue
+
+        # no queues were outputted
+        if len(queues) == 0:
+            print(f"{row['ID']} cover dependence returned no queues")
             continue
 
         # get the corresponding order of setups to do
@@ -52,11 +57,11 @@ def getCoverData(db: list[dict], overwrite: bool = False) -> list[dict]:
             infile.write("\n".join(queues))
         
         # get the glue fumen verison of the setups
-        glueFumens = disassemble(setups) 
+        glueFumens = disassemble(setups, print_error=False) 
         
         # run cover on the setup fumens
         sfinderCmd = f"java -jar {SFINDERPATH} cover -t '{' '.join(map(' '.join, glueFumens))}' -K {KICKPATH} " \
-                     f"d 180 -o {COVERPATH} -pp {PATTERNSPATH}"
+                     f"-d 180 -o {COVERPATH} -pp {PATTERNSPATH}"
         subprocess.run(sfinderCmd.split(), stdout = subprocess.DEVNULL)
         
         # open the csv file
@@ -160,11 +165,12 @@ def getOrderOfSetups(row: dict, db: list[dict]) -> list[str]:
     return setups
     
 if __name__ == "__main__":
+    from utils.directories import FILENAMES
     from utils.fileReader import openFile
     import csv
 
-    db = openFile(path.join(ROOT, "tsv", "2ndPC.tsv"))
-    # db = queryWhere(db, where="Leftover=T")
+    db = openFile(FILENAMES[8])
+    # db = queryWhere(db, where="ID>=5FF9FBFDFD")
 
     db = getCoverData(db, overwrite=True)
 

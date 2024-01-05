@@ -158,10 +158,10 @@ def check_percents(db: list[dict], threads: int = 4) -> list[dict]:
 
 if __name__ == "__main__":
     import os
-
+    from utils.directories import FILENAMES
     from utils.fileReader import openFile, queryWhere
 
-    db = openFile(os.path.join(ROOT, "tsv", "3rdPC.tsv"))
-    db = queryWhere(db, where="Leftover=T")
+    db = openFile(FILENAMES[8])
+    # db = queryWhere(db, where="Leftover=T")
 
-    check_percents(db, threads=4)
+    check_percents(db, threads=1)
