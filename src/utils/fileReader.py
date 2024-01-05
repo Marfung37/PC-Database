@@ -4,6 +4,9 @@ import re
 from typing import Callable
 from csv import DictReader
 
+DEFAULT_COMPARE = lambda x, y: x < y
+DEFAULT_EQUALS = lambda x, y: x == y
+
 def compareQueues(q1: str, q2: str) -> bool:
     '''
     Determine if a queue is less than another queue following if duplicate follow TILJSZO, then TILJSZO, then longest
@@ -20,6 +23,7 @@ def compareQueues(q1: str, q2: str) -> bool:
     # in the database length is lower precedence
 
     # dict assigning value for each piece
+    # TODO: Remove this piece vals
     pieceVals = {
         '': 0,
         'T': 1,
@@ -72,19 +76,27 @@ def compareQueues(q1: str, q2: str) -> bool:
 
 # dict for column to the comparison function
 COL2COMPARE = {
-    "ID": lambda x, y: x < y,
+    "ID": DEFAULT_COMPARE,
     "Leftover": compareQueues,
 }
 
-def binarySearch(text: str, lst: list[str], compare: Callable[[str, str], bool], dir: str = "left") -> int:
+def binarySearch(text: str,
+                 db: list[dict],
+                 column_name: str, 
+                 dir: str = "left",
+                 compare: Callable[[str, str], bool] = DEFAULT_COMPARE, 
+                 equals: Callable[[str, str], bool] = DEFAULT_EQUALS, 
+                 ) -> int:
     '''
     Determine if text is within the list with binary search
 
     Parameters:
-        text (str): a string to be found in the list
-        lst (list): A sorted list of strings (sorted by the compare)
-        compare (func): a compare functional obj that returns a boolean when comparing strings
+        text (str): string to find in the db
+        db (list): a list of rows in the format of a dictionary
+        column_name (str): name of the column to binary search
         dir (str): either "left" or "right" to get left or right edge of range where text is found
+        compare (func): a compare functional obj that returns a boolean when comparing strings
+        equals (func): function to compare for linear search
 
     Returns:
         int: index where the text is found and -1 if not
@@ -92,7 +104,7 @@ def binarySearch(text: str, lst: list[str], compare: Callable[[str, str], bool],
     '''
 
     low = 0
-    high = len(lst) - 1
+    high = len(db) - 1
 
     while low < high:
         mid = low + (high - low) // 2
@@ -101,39 +113,44 @@ def binarySearch(text: str, lst: list[str], compare: Callable[[str, str], bool],
             mid += (high - low) % 2
 
         # check if text was found already
-        if text == lst[mid]:
+        if equals(text, db[mid][column_name]):
             if dir == "left":
                 high = mid
 
-                if mid - 1 < 0 or text != lst[mid - 1]:
+                if mid - 1 < 0 or text != db[mid - 1][column_name]:
                     low = mid
 
             else:
                 low = mid
 
-                if mid + 1 == len(lst) or text != lst[mid + 1]:
+                if mid + 1 == len(db) or text != db[mid + 1][column_name]:
                     high = mid
 
         # check if less than
-        elif compare(text, lst[mid]):
+        elif compare(text, db[mid][column_name]):
             high = mid - 1
         else:
             low = mid + 1
 
     # final check if the text was found
-    if text == lst[low]:
+    if equals(text, db[low][column_name]):
         return low
 
     # not found
     return -1
 
-def linearSearch(text: str, lst: list[str]) -> list[int]:
+def linearSearch(text: str, 
+                 db: list[dict],
+                 column_name: str,
+                 equals: Callable[[str, str], bool] = DEFAULT_EQUALS
+                 ) -> list[int]:
     '''
     Determine if text is within the list with binary search
 
     Parameters:
         text (str): a string to be found in the list
-        lst (list): A sorted list of strings (sorted by the compare)
+        db (list): a list of rows in the format of a dictionary
+        column_name (str): name of the column to binary search
 
     Returns:
         list[int]: indices where text was found
@@ -142,20 +159,27 @@ def linearSearch(text: str, lst: list[str]) -> list[int]:
 
     indices = []
 
-    for i, ele in enumerate(lst):
-        if text == ele:
+    # go through all of db
+    for i, row in enumerate(db):
+        # if the element in the list is the same as text
+        if equals(text, row[column_name]):
             indices.append(i)
 
     return indices
 
 
-def getMatchingRange(text: str, lst: list[str], op: str, compare: Callable[[str, str], bool]) -> list[tuple[int, int]]:
+def getMatchingRange(text: str,
+                     db: list[dict],
+                     column_name: str,
+                     op: str, compare: Callable[[str, str], bool],
+                     ) -> list[tuple[int, int]]:
     '''
     Get the ranges where text is satisfies by the operator in the list
 
     Parameters:
         text (str): a string to be found in the list
-        lst (list): a sorted list of strings (sorted by the compare)
+        db (list): a list of rows in the format of a dictionary
+        column_name (str): name of the column to binary search
         op (str): a operator in {<>, >=, <=, <, >, =}
         compare (func): a compare functional obj that returns a boolean when comparing strings
 
@@ -166,28 +190,28 @@ def getMatchingRange(text: str, lst: list[str], op: str, compare: Callable[[str,
    
     # do the simple operators to handle
     startIndex = 0
-    endIndex= len(lst)
+    endIndex= len(db)
 
     if op == "<=":
-        endIndex = binarySearch(text, lst, compare, dir="right") + 1
+        endIndex = binarySearch(text, db, column_name, dir="right", compare=compare) + 1
     elif op == ">=":
-        startIndex = binarySearch(text, lst, compare, dir="left")
+        startIndex = binarySearch(text, db, column_name, dir="left", compare=compare)
 
     elif op == "<":
-        endIndex = binarySearch(text, lst, compare, dir="left")
+        endIndex = binarySearch(text, db, column_name, dir="left", compare=compare)
     elif op == ">":
-        startIndex = binarySearch(text, lst, compare, dir="right") + 1
+        startIndex = binarySearch(text, db, column_name, dir="right", compare=compare) + 1
 
     elif op == "=":
-        startIndex = binarySearch(text, lst, compare, dir="left")
-        endIndex = binarySearch(text, lst, compare, dir="right") + 1
+        startIndex = binarySearch(text, db, column_name, dir="left", compare=compare)
+        endIndex = binarySearch(text, db, column_name, dir="right", compare=compare) + 1
 
     # edge case for <> which isn't just a start and end
     if op == "<>":
-        endIndex1 = binarySearch(text, lst, compare, dir="left")
-        startIndex2 = binarySearch(text, lst, compare, dir="right") + 1
+        endIndex1 = binarySearch(text, db, column_name, dir="left", compare=compare)
+        startIndex2 = binarySearch(text, db, column_name, dir="right", compare=compare) + 1
 
-        return [(0, endIndex1), (startIndex2, len(lst))]
+        return [(0, endIndex1), (startIndex2, len(db))]
 
     return [(startIndex, endIndex)]
 
@@ -208,28 +232,39 @@ def openFile(filepath: str) -> list[dict]:
 
     return db
 
-def queryWhere(db: list[dict], where: str = "") -> list[dict]:
+def queryWhere(db: list[dict], 
+               where: str = "", 
+               compare: Callable[[str, str], bool] = DEFAULT_COMPARE,
+               equals: Callable[[str, str], bool] = DEFAULT_EQUALS,
+               ) -> list[dict]:
     '''
     Get all rows with the specific column filtering with where
 
     Parameters:
         db (list): a list of rows in the format of a dictionary
         where (str): expression of in format column operator value
+        compare (func): function to compare for binary search
+        equals (func): function to compare for linear search
 
     Return:
-        list[dict]: list of rows with where filtered for
+        list[dict]: list of filtered rows from where
     '''
 
 
     # parse the where
     if where:
         operators = ["<>", ">=", "<=", "<", ">", "="]
-        whereCol, op, val = re.split(f"({'|'.join(operators)})", where)    
+        where_col, op, val = re.split(f"({'|'.join(operators)})", where)    
 
-        # check if this column has a comparison function
-        colLst = [row[whereCol] for row in db]
-        if whereCol in COL2COMPARE:
-            indices = getMatchingRange(val, colLst, op, COL2COMPARE[whereCol])
+        # set compare to default compare function if the column has one
+        is_default_compare = True
+        if where_col in COL2COMPARE and compare is DEFAULT_COMPARE:
+            compare = COL2COMPARE[where_col]
+            is_default_compare = False
+
+        # if compare has been changed or a compare was passed in
+        if not is_default_compare or compare is not DEFAULT_COMPARE:
+            indices = getMatchingRange(val, db, where_col, op, compare=compare)
 
             # filtered out the rows
             rows = []
@@ -239,8 +274,9 @@ def queryWhere(db: list[dict], where: str = "") -> list[dict]:
             db = rows
 
         else:
-            indices = linearSearch(val, colLst)
+            indices = linearSearch(val, db, where_col, equals=equals)
 
+            # filtered out the rows
             db = [db[i] for i in indices]
 
     return db

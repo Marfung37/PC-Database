@@ -1,7 +1,7 @@
 # Several fumen related functions
 
 import py_fumen_py as pf
-from typing import Callable
+from typing import Callable, Optional
 from .disassemble import disassemble
 
 def _decode_wrapper(fumen: str) -> list[pf.Page]:
@@ -101,6 +101,55 @@ def get_pieces(fumen: str, operations: bool = True) -> list:
             
     return result
 
+def field_equals(field1: Optional[pf.Field], field2: Optional[pf.Field]) -> bool:
+    '''
+    field1 == field2
+    '''
+
+    if field1 is None or field2 is None:
+        return False
+
+    return field1.string() == field2.string()
+
+def permutated_equals(fumen1: str, fumen2: str) -> bool:
+    '''
+    Fumens are equal even if the pages are in a different order (only considering fields)
+
+    Parameters:
+        fumen1 (str): a fumen code
+        fumen2 (str): a fumen code
+
+    Return:
+        bool: whether the two fumens are the same
+    '''
+
+    # if the fumens are the same
+    if fumen1 == fumen2:
+        return True
+
+    # decode the fumens
+    pages1 = _decode_wrapper(fumen1)
+    pages2 = _decode_wrapper(fumen2)
+
+    # quick check if the lengths are the same
+    if len(pages1) != len(pages2):
+        return False
+
+    # check if there's any page in pages1 not in pages2
+    for page1 in pages1:
+        
+        # try to find the same field in pages2
+        found = False
+        for page2 in pages2:
+            if field_equals(page1.field, page2.field):
+                found = True
+                break
+
+        if not found:
+            return False
+
+    return True
+
 def _base_fumen_util(fumen: str, func: Callable[[pf.Page], pf.Page]) -> str:
     '''
     A base fumen where apply a function on each of its pages
@@ -127,18 +176,25 @@ def _base_fumen_util(fumen: str, func: Callable[[pf.Page], pf.Page]) -> str:
 
     return result
 
-def clear_flags(fumen: str) -> str:
+def clear_configs(fumen: str, field: bool = True, operation: bool = False, comment: bool = False) -> str:
     '''
-    Remove all other configs for each page of the fumen other than the field
+    Remove configs for each page of the fumen
 
     Parameter:
-        fumen (str): a fumen code
+        fumen (str):        a fumen code
+        field (bool):       whether field should be kept
+        operation (bool):   whether operation should be kept
+        comment (bool):     whether field should be kept
 
     Return:
         str: fumen with all other configs removed
     '''
     
-    removed_configs = lambda page: pf.Page(field=page.field)
+    removed_configs = lambda page: pf.Page(
+                        field=page.field            if field else None, 
+                        operation=page.operation    if operation else None, 
+                        comment=page.comment        if comment else None
+                        )
 
     return _base_fumen_util(fumen, removed_configs)
 
@@ -153,9 +209,9 @@ def mirror_fumen(fumen: str) -> str:
         str: mirrored fumen
     '''
 
-    mirror_page = lambda page: pf.Page(field=page.field.mirror(mirror_colors=True))
+    def mirror_page(page):
+        field = page.field
+        field.mirror(mirror_color=True)
+        return pf.Page(field=field)
 
     return _base_fumen_util(fumen, mirror_page)
-
-if __name__ == "__main__":
-    print(get_pieces(input("Enter a fumen: ")))

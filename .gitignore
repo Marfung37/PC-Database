@@ -132,3 +132,6 @@ dmypy.json
 # Input and output files
 src/input/*
 src/output/*
+
+# test file for utils
+src/test.py

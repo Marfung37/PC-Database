@@ -2,6 +2,7 @@ import re
 import threading
 import subprocess
 
+from utils.queue_utils import split_colon_extended_pieces
 from utils.pieces import extendPieces
 from utils.directories import ROOT, SFINDERPATH, KICKPATH
 
@@ -30,7 +31,7 @@ def calculate_percent_in_range(db: list[dict], line_start: int, line_end: int, t
             continue
 
         # split by colon for each
-        pieces = map("".join, re.findall("(.+?{.*?}):|([^{}]+?):|(.+?)$", pieces))
+        pieces = split_colon_extended_pieces(pieces)
         
         # store the numerator and denominator
         numerator = 0
