@@ -3,7 +3,7 @@
 from .pieces import extendPieces
 from typing import Callable
 
-def matchingQueue(queue: str, pattern: str, equality: Callable[[str, str], bool] = lambda x, y: x == y) -> int:
+def matching_queue(queue: str, pattern: str, equality: Callable[[str, str], bool] = lambda x, y: x == y) -> int:
     '''
     Find where a queue is within the extended pieces
     
@@ -25,9 +25,9 @@ def matchingQueue(queue: str, pattern: str, equality: Callable[[str, str], bool]
     # get a generator obj of the output queues
     outQueues = extendPieces(pattern)
 
-    return binarySearch(queue, list(outQueues), equality=equality)
+    return binary_search(queue, list(outQueues), equality=equality)
 
-def compareQueues(q1: str, q2: str) -> bool:
+def compare_queues(q1: str, q2: str) -> bool:
     '''
     Determine if a queue is less than another queue following TILJSZO order
 
@@ -67,16 +67,16 @@ def compareQueues(q1: str, q2: str) -> bool:
     # exactly the same queues
     return False
 
-def binarySearch(queue: str, 
-                 queueLst: list[str], 
-                 compare: Callable[[str, str], bool] = compareQueues, 
+def binary_search(queue: str, 
+                 queue_lst: list[str], 
+                 compare: Callable[[str, str], bool] = compare_queues, 
                  equality: Callable[[str, str], bool] = lambda x, y: x == y) -> int:
     '''
     Find where a queue is found to be started with in the list of queues with binary search
 
     Parameters:
         queue (str): A tetris format queue
-        queueLst (list): A list of tetris format queues sorted by TILJSZO
+        queue_lst (list): A list of tetris format queues sorted by TILJSZO
         compare (func): a compare functional obj that returns a boolean when comparing queues
         equality (func): a equality functional obj that returns boolean when two queues are equal
 
@@ -85,23 +85,19 @@ def binarySearch(queue: str,
 
     '''
     low = 0
-    high = len(queueLst) - 1
+    high = len(queue_lst) - 1
 
     while low <= high:
         mid = low + (high - low) // 2
 
         # check if queue was found already
-        if equality(queueLst[mid], queue):
+        if equality(queue_lst[mid], queue):
             return mid
 
         # check if less than
-        if compare(queue, queueLst[mid]):
+        if compare(queue, queue_lst[mid]):
             high = mid - 1
         else:
             low = mid + 1
 
     return -1
-
-if __name__ == "__main__":
-    print(matchingQueue("TILJSZO", "[JSZO]!{J<S||JS<Z},[TIL]!,[ILS]!{/^[^L]/}", equality=lambda x, y: x.startswith(y)))
-    # print(help(matchingQueue))

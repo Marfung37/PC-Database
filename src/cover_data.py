@@ -10,7 +10,7 @@ from utils.disassemble import disassemble
 PATTERNSPATH = path.join(ROOT, "src", "input", "patterns.txt")
 COVERPATH = path.join(ROOT, "src", "output", "cover.csv")
 
-def getCoverData(db: list[dict], overwrite: bool = False) -> list[dict]:
+def get_cover_data(db: list[dict], overwrite: bool = False) -> list[dict]:
     '''
     Run cover on setups to get the cover data for the setup from cover dependency
 
@@ -26,9 +26,9 @@ def getCoverData(db: list[dict], overwrite: bool = False) -> list[dict]:
     for row in db:
 
         # if the column has cover data filled in
-        previousCoverData = ""
+        previous_cover_data = ""
         if row["Cover Data"]:
-            previousCoverData = row["Cover Data"]
+            previous_cover_data = row["Cover Data"]
 
         # get the dependency
         pattern = row["Cover Dependence"]
@@ -47,7 +47,7 @@ def getCoverData(db: list[dict], overwrite: bool = False) -> list[dict]:
             continue
 
         # get the corresponding order of setups to do
-        setups = getOrderOfSetups(row, db)
+        setups = get_order_of_setups(row, db)
 
         # output bit string
         bitstr = ""
@@ -57,42 +57,45 @@ def getCoverData(db: list[dict], overwrite: bool = False) -> list[dict]:
             infile.write("\n".join(queues))
         
         # get the glue fumen verison of the setups
-        glueFumens = disassemble(setups, print_error=False) 
+        glue_fumens = disassemble(setups, print_error=False) 
         
         # run cover on the setup fumens
-        sfinderCmd = f"java -jar {SFINDERPATH} cover -t '{' '.join(map(' '.join, glueFumens))}' -K {KICKPATH} " \
+        sfinder_cmd = f"java -jar {SFINDERPATH} cover -t '{' '.join(map(' '.join, glue_fumens))}' -K {KICKPATH} " \
                      f"-d 180 -o {COVERPATH} -pp {PATTERNSPATH}"
-        subprocess.run(sfinderCmd.split(), stdout = subprocess.DEVNULL)
+        subprocess.run(sfinder_cmd.split(), stdout = subprocess.DEVNULL)
+
+        # DEBUG
+        # print(sfinderCmd)
         
         # open the csv file
         outfile = open(COVERPATH, "r")
-        csvFile = reader(outfile)
+        csvfile = reader(outfile)
 
         # skip header
-        next(csvFile)
+        next(csvfile)
 
         # go through each line
-        for line in csvFile:
+        for line in csvfile:
             # start at 1 as first column is queues
-            fumenNum = 1
+            fumen_num = 1
 
             # go through all fumens, if all work then this queue is covered by the setup
-            andBool = True
-            for fumens in glueFumens:
+            and_bool = True
+            for fumens in glue_fumens:
                 # go through for each page of the fumen
-                orBool = False
+                or_bool = False
                 for _ in fumens:
-                    orBool = orBool or line[fumenNum] == "O"
-                    fumenNum += 1
+                    or_bool = or_bool or line[fumen_num] == "O"
+                    fumen_num += 1
                 
                 # check if this fumen is also possible
-                andBool = andBool and orBool
+                and_bool = and_bool and or_bool
 
                 # if ever false can just break out
-                if not andBool: break
+                if not and_bool: break
             
             # create the bit string for the cover of the setup
-            bitstr += "1" if andBool else "0"
+            bitstr += "1" if and_bool else "0"
     
         # simplify the cover dependency completely describes the setup
         if "0" not in bitstr:
@@ -106,8 +109,8 @@ def getCoverData(db: list[dict], overwrite: bool = False) -> list[dict]:
             continue
 
         # check if the cover data before is different after computing it
-        if previousCoverData and previousCoverData != bitstr:
-            print(f"{row['ID']} previous cover data differ from the new calculated value {previousCoverData} -> {bitstr}")
+        if previous_cover_data and previous_cover_data != bitstr:
+            print(f"{row['ID']} previous cover data differ from the new calculated value {previous_cover_data} -> {bitstr}")
             
             # overwrite
             if overwrite:
@@ -121,7 +124,7 @@ def getCoverData(db: list[dict], overwrite: bool = False) -> list[dict]:
 
     return db
 
-def getOrderOfSetups(row: dict, db: list[dict]) -> list[str]:
+def get_order_of_setups(row: dict, db: list[dict]) -> list[str]:
     '''
     Get the previous setups to this setup
 
@@ -137,24 +140,24 @@ def getOrderOfSetups(row: dict, db: list[dict]) -> list[str]:
     
     # get the fumen and previous setup for this row
     fumen = row["Setup"]
-    previousSetupID = row["Previous Setup"]
+    previous_setup_id = row["Previous Setup"]
 
     # add to setups
     setups.append(fumen)
 
     # go through the previous setups
-    while previousSetupID:
+    while previous_setup_id:
         
         try:
             # find the row that had the previous setup id
-            row = queryWhere(db, where=f"ID={previousSetupID}")[0]
+            row = queryWhere(db, where=f"ID={previous_setup_id}")[0]
         except:
             # error
-            raise ValueError(f"The previous setup {previousSetupID} was not found")
+            raise ValueError(f"The previous setup {previous_setup_id} was not found")
 
         # get the fumen and previous setup for this row
         fumen = row["Setup"]
-        previousSetupID = row["Previous Setup"]
+        previous_setup_id = row["Previous Setup"]
 
         # add to setups
         setups.append(fumen)
@@ -169,10 +172,10 @@ if __name__ == "__main__":
     from utils.fileReader import openFile
     import csv
 
-    db = openFile(FILENAMES[8])
-    # db = queryWhere(db, where="ID>=5FF9FBFDFD")
+    db = openFile(FILENAMES[5])
+    db = queryWhere(db, where="ID>=51E57E9BFF")
 
-    db = getCoverData(db, overwrite=True)
+    db = get_cover_data(db, overwrite=True)
 
     outfile = open("output/cover_data.tsv", "w")
 

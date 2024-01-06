@@ -142,6 +142,7 @@ def binarySearch(text: str,
 def linearSearch(text: str, 
                  db: list[dict],
                  column_name: str,
+                 op: str,
                  equals: Callable[[str, str], bool] = DEFAULT_EQUALS
                  ) -> list[int]:
     '''
@@ -150,6 +151,7 @@ def linearSearch(text: str,
     Parameters:
         text (str): a string to be found in the list
         db (list): a list of rows in the format of a dictionary
+        op (str): operator that should be only = and <>
         column_name (str): name of the column to binary search
 
     Returns:
@@ -157,12 +159,21 @@ def linearSearch(text: str,
 
     '''
 
+    # determine the right function
+    if op == "=":
+        operation = equals
+    elif op == "<>":
+        operation = lambda x, y: not equals(x, y)
+    else:
+        # issue
+        raise ValueError(f"Got an invalid operator for linear search '{op}'")
+
     indices = []
 
     # go through all of db
     for i, row in enumerate(db):
         # if the element in the list is the same as text
-        if equals(text, row[column_name]):
+        if operation(text, row[column_name]):
             indices.append(i)
 
     return indices
@@ -249,7 +260,9 @@ def queryWhere(db: list[dict],
     Return:
         list[dict]: list of filtered rows from where
     '''
-
+    
+    if len(db) == 0:
+        return db
 
     # parse the where
     if where:
@@ -274,7 +287,7 @@ def queryWhere(db: list[dict],
             db = rows
 
         else:
-            indices = linearSearch(val, db, where_col, equals=equals)
+            indices = linearSearch(val, db, where_col, op, equals=equals)
 
             # filtered out the rows
             db = [db[i] for i in indices]

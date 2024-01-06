@@ -5,8 +5,6 @@ Check that cover data isn't 0
 Check that percents match what's given
 Check that mirrors seem accurate 
 Check that the build is same the pieces in the setup
-Check for oqb that the previous setup cover upto n length queue also seen in subsequent setup
+Check for oqb that next setup up to n length is in the previous setup
 Check if the IDs are sorted
 
-Added to quality of life
-2l check

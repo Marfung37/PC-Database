@@ -1,3 +1,2 @@
 ###### Requirements ######
-tetris-fumen
 py_fumen_py

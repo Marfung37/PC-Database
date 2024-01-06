@@ -5,13 +5,14 @@ from utils.fumen_utils import mirror_fumen, permutated_equals
 from utils.queue_utils import mirror_queue, mirror_pattern, \
                               extended_pieces_equals
 
-def get_mirror_setup(db: list[dict], row: dict) -> dict:
+def get_mirror_setup(db: list[dict], row: dict, check_pieces: bool = False) -> dict:
     '''
     Find the row that is the mirror of this row 
 
     Parameters:
         db (list): a list of rows in the format of a dictionary
         row (dict): one of the rows in db
+        check_pieces (bool): also check if pieces are mirrored
 
     Return:
         dict: the row that represents the mirror of this row
@@ -52,10 +53,9 @@ def get_mirror_setup(db: list[dict], row: dict) -> dict:
     mirror_cover_dependence = mirror_pattern(row["Cover Dependence"])
     
     # case the pieces are null
-    if row["Pieces"] != "NULL":
+    mirror_pieces = "NULL"
+    if row["Pieces"] != "NULL" and check_pieces:
         mirror_pieces = mirror_pattern(row["Pieces"])
-    else:
-        mirror_pieces = "NULL"
 
     for setup in possible_setups:
         try:
@@ -64,13 +64,14 @@ def get_mirror_setup(db: list[dict], row: dict) -> dict:
                                           setup["Cover Dependence"]):
                 continue
 
-            # case the pieces are null
-            if mirror_pieces == "NULL":
-                if setup["Pieces"] != "NULL":
-                    continue
-            else:
+            if check_pieces:
+                # case the pieces are null
+                if mirror_pieces == "NULL":
+                    if setup["Pieces"] != "NULL":
+                        continue
+
                 # check pieces is the same
-                if not extended_pieces_equals(mirror_pieces, setup["Pieces"]):
+                elif not extended_pieces_equals(mirror_pieces, setup["Pieces"]):
                     continue
         except:
             raise ValueError(f"{row['ID']} or {setup['ID']} ran into an error when " \

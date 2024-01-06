@@ -12,8 +12,9 @@
 import py_fumen_py as pf
 from itertools import combinations
 
+from utils.disassemble import disassemble
 from utils.assemble import assemble
-from utils.constants import MINOVALS
+from utils.queue_utils import MINOVALS
 from utils.fumen_utils import get_pieces, field_to_fumen
 
 def field_diff(field_base: pf.Field, field_diff: pf.Field) -> pf.Field:
@@ -66,24 +67,37 @@ def variable_setups(fumen: str, choice: int = 1) -> str:
     # get the required and optional pages
     required_page, optional_page = pages
 
+    # glue the required page
+    required_pieces_pages = pf.decode(
+        disassemble(field_to_fumen(required_page.field))[0][0]
+    )
+
+    # clear line clears in each of the pages
+    required_field_cleared = required_page.field.copy()
+    required_field_cleared.clear_line()
+    optional_field_cleared = optional_page.field.copy()
+    optional_field_cleared.clear_line()
+    
     # get the optional_pieces
     optional_pieces = get_pieces(field_to_fumen(
-        field_diff(optional_page.field, required_page.field)
+        field_diff(optional_field_cleared, required_field_cleared)
     ))[0]
 
     # sort the pieces
     optional_pieces.sort(key=lambda x: MINOVALS[x.mino])
 
     # get all combinations of indices of passed choice
-    piece_combinations = combinations(range(len(optional_pieces)), choice)
+    piece_combinations = []
+    for sub_choice in range(1, choice + 1):
+        piece_combinations += list(combinations(range(len(optional_pieces)), sub_choice))
 
     # add each combo of pieces to the required page with required page being first page
     variable_pages = [required_page]
     for combo in piece_combinations:
         chosen_pieces = (optional_pieces[c] for c in combo)
 
-        # make copy of the required page and add to pages
-        new_pages = [required_page]
+        # make copy of the required pieces as the start of the new pages
+        new_pages = required_pieces_pages[:]
         
         # add the operations as new page 
         for piece in chosen_pieces:
@@ -103,7 +117,16 @@ def variable_setups(fumen: str, choice: int = 1) -> str:
 
 
 if __name__ == "__main__":
-    print(variable_setups('v115@GhwhDeR4CewhBewwR4wwBtAewhAe1wBtwhJeAgH9gw?hh0R4BthlAewhg0R4BeBtglAewhg0FeglAewhSeAgH'))
+    # for rn basic argv
+    from sys import argv
+
+    if len(argv) != 3:
+        print(f"python {argv[0]} <fumen> <choice>")
+        exit()
+
+    fumen = argv[1]
+    choice = int(argv[2])
+    print(variable_setups(fumen, choice=choice))
 
 
 

@@ -14,8 +14,8 @@
 # imports
 from utils.directories import FILENAMES
 from utils.fumen_utils import get_field
-from utils.sortTetris import sortQueue
-from utils.reversePieces import matchingQueue
+from utils.queue_utils import sort_queue
+from utils.inverse_pieces import matching_queue
 from utils.formulas import PCNUM2LONUM
 from utils.fileReader import queryWhere, openFile
 
@@ -53,7 +53,7 @@ def setupFinder(pcNum: int, queue: str, previousSetup: str = "") -> list[dict]:
     rows = openFile(FILENAMES[pcNum])
 
     # get leftover pieces sorted
-    leftover = sortQueue(queue[:PCNUM2LONUM(pcNum)])
+    leftover = sort_queue(queue[:PCNUM2LONUM(pcNum)])
     
     # get the rows where the leftover matches
     rows = queryWhere(rows, where=f"Leftover={leftover}")
@@ -64,7 +64,7 @@ def setupFinder(pcNum: int, queue: str, previousSetup: str = "") -> list[dict]:
     # go through the rows
     for row in rows:
         found = False
-        index = matchingQueue(queue, row["Cover Dependence"], equality=lambda x, y: y.startswith(x))
+        index = matching_queue(queue, row["Cover Dependence"], equality=lambda x, y: y.startswith(x))
 
         if index == -1:
             continue

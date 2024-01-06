@@ -2,6 +2,7 @@ import re
 import threading
 import subprocess
 
+from utils.fumen_utils import is_pc, get_height
 from utils.queue_utils import split_colon_extended_pieces
 from utils.pieces import extendPieces
 from utils.directories import ROOT, SFINDERPATH, KICKPATH
@@ -26,6 +27,11 @@ def calculate_percent_in_range(db: list[dict], line_start: int, line_end: int, t
         pieces = line["Pieces"]
         percent = line["Solve %"]
 
+        # check if 2l pc
+        clear_line = 4
+        if is_pc(setup) and get_height(setup) == 2:
+            clear_line = 2
+
         # continue if the pieces are NULL
         if pieces == 'NULL':
             continue
@@ -34,8 +40,7 @@ def calculate_percent_in_range(db: list[dict], line_start: int, line_end: int, t
         pieces = split_colon_extended_pieces(pieces)
         
         # store the numerator and denominator
-        numerator = 0
-        denominator = 0
+        numerator = 0 denominator = 0
         error = False
 
         # run pieces for each page of the setup
@@ -44,13 +49,14 @@ def calculate_percent_in_range(db: list[dict], line_start: int, line_end: int, t
                 # get the queues for this patten
                 queues = extendPieces(pattern)
 
+
                 # put the queues into a patterns file
                 pattern_filepath = os.path.join(ROOT, "src", "input", f"patterns_{thread_num}.txt")
                 with open(pattern_filepath, "w") as infile:
                     infile.write("\n".join(queues))
     
                 # run the percent and get the output
-                percent_cmd = f"java -jar {SFINDERPATH} percent -t {setup} -pp {pattern_filepath} -P {page + 1} -d 180 -K {KICKPATH}".split()
+                percent_cmd = f"java -jar {SFINDERPATH} percent -t {setup} -pp {pattern_filepath} -P {page + 1} -d 180 -K {KICKPATH} -c {clear_line}".split()
                 percent_out = subprocess.run(
                     percent_cmd, 
                     stdout=subprocess.PIPE,
@@ -161,7 +167,7 @@ if __name__ == "__main__":
     from utils.directories import FILENAMES
     from utils.fileReader import openFile, queryWhere
 
-    db = openFile(FILENAMES[8])
-    # db = queryWhere(db, where="Leftover=T")
+    db = openFile(FILENAMES[6])
+    db = queryWhere(db, where="ID=6E197ABDFF")
 
     check_percents(db, threads=1)

@@ -1,6 +1,7 @@
 # various functions related to queues
 
 import re
+from typing import Callable
 from py_fumen_py import Mino
 from .pieces import extendPieces
 
@@ -114,13 +115,14 @@ def mirror_pattern(pattern: str) -> str:
 
     return new_pattern
 
-def extended_pieces_equals(pattern1: str, pattern2: str) -> bool:
+def extended_pieces_equals(pattern1: str, pattern2: str, equals: Callable[[str, str], bool] = lambda x, y: x == y) -> bool:
     '''
     Check if two extended pieces are equal
 
     Parameter:
         pattern1 (str): a extended pieces pattern
         pattern2 (str): a extended pieces pattern
+        equals (func): compare if two queues are the same
 
     Return:
         bool: whether the two patterns are equal
@@ -137,7 +139,7 @@ def extended_pieces_equals(pattern1: str, pattern2: str) -> bool:
 
         # compare each queue one by one
         for q1, q2 in zip(queues1, queues2):
-            if q1 != q2:
+            if not equals(q1, q2):
                 return False
 
     return True
@@ -156,3 +158,51 @@ def split_colon_extended_pieces(pattern: str) -> list[str]:
     splitted_pattern = map("".join, re.findall("(.+?{.*?}):|([^{}]+?):|(.+?)$", pattern))
 
     return list(splitted_pattern)
+
+def extended_pieces_startswith(pattern_short: str, pattern_long: str) -> bool:
+    '''
+    Checks if all pattern long contains queues that start with something found in pattern short
+
+    Parameters:
+        pattern_short (str): the extended pieces pattern with shorter length queues
+        pattern_long (str): the extended pieces pattern with longer length queues
+
+    Return:
+        bool: whether all the long queues start with some queue in the short queues
+    '''
+
+    # if coming from the database, could separated by colons
+    pattern_short_split = split_colon_extended_pieces(pattern_short)
+    pattern_long_split = split_colon_extended_pieces(pattern_long)
+
+    for short_part, long_part in zip(pattern_short_split, pattern_long_split):
+        # compute the two queues
+        short_queues = list(extendPieces(short_part))
+        long_queues = extendPieces(long_part)
+
+        # for faster speed
+        common_short_queues = []
+
+        # go through the long queues
+        for lq in long_queues:
+            found = False
+            for sq in common_short_queues:
+                if lq.startswith(sq):
+                    found = True
+                    break
+
+            if not found:
+                for sq in short_queues:
+                    if lq.startswith(sq):
+                        found = True
+                        common_short_queues.append(sq)
+                        break
+
+            # a long queue couldn't find a corresponding short queue it starts with
+            if not found:
+                return False
+
+    return True
+
+   
+

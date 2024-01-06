@@ -43,6 +43,10 @@ def get_field(fumen: str, height: int = 4) -> list[str]:
         # get field object
         field = page.field
 
+        # if there's no field skip this page
+        if field is None:
+            continue
+
         # get the string
         field = field.string(truncated=False, with_garbage=False)
 
@@ -82,24 +86,87 @@ def get_pieces(fumen: str, operations: bool = True) -> list:
     result = []
 
     # disassemble the fumen
-    glue_fumens = disassemble(fumen)[0]
+    glue_fumens = disassemble(fumen)
 
     # for each fumen output
     for glue_fumen in glue_fumens:
         fumen_result = []
+
+        # get the first result from glue fumen for that page
+        glue_fumen = glue_fumen[0]
         
         # decode the fumen for the pages
         pages = _decode_wrapper(glue_fumen)
 
         for page in pages:
+            page_op = page.operation
+
+            # if there's a page with no operations
+            if page_op is None:
+                continue
+
             if operations:
-                fumen_result.append(page.operation)
+                fumen_result.append(page_op)
             else:
-                fumen_result.append(page.operation.mino)
+                fumen_result.append(page_op.mino)
 
         result.append(fumen_result)
             
     return result
+
+def is_pc(fumen: str) -> bool:
+    '''
+    Check if the fumen is a pc and non-empty
+
+    If a page is None, then considered a pc
+
+    Parameter:
+        fumen (str): a fumen code
+
+    Return:
+        bool: whether the fumen is a pc
+    '''
+
+    # decode the fumen
+    pages = _decode_wrapper(fumen)
+
+    # go through the pages
+    for page in pages:
+        # if the page has a field
+        if page.field is not None:
+            # clear all lines
+            if page.field.clear_line() == 0:
+                return False
+
+            # check if the height is 0
+            if page.field.height() != 0:
+                return False
+
+    return True
+
+def get_height(fumen: str) -> int:
+    '''
+    Get max height of all pages of a fumen
+
+    Parameter:
+        fumen (str): a fumen code
+
+    Return:
+        int: the maximum height of all pages
+    '''
+
+    # get pages
+    pages = _decode_wrapper(fumen)
+    
+    # get the max height all of the pages
+    height = 0
+    for page in pages:
+        if page.field is not None:
+            if height < page.field.height():
+                height = page.field.height()
+
+    return height
+
 
 def field_equals(field1: Optional[pf.Field], field2: Optional[pf.Field]) -> bool:
     '''
