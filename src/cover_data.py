@@ -10,6 +10,56 @@ from utils.disassemble import disassemble
 PATTERNSPATH = path.join(ROOT, "src", "input", "patterns.txt")
 COVERPATH = path.join(ROOT, "src", "output", "cover.csv")
 
+def bin2hex(binary: str) -> str:
+    '''
+    Convert a binary string into uppercase hex
+    '''
+
+    return hex(int(binary, 2))[2:].upper()
+
+def get_order_of_setups(row: dict, db: list[dict]) -> list[str]:
+    '''
+    Get the previous setups to this setup
+
+    Parameter:
+        row (dict): a row in database format as a dictionary
+        db (list): a list of the rows in the database
+
+    Return:
+        list[str]: fumens ordered by the first setup to build to last one
+    '''
+
+    setups = []
+    
+    # get the fumen and previous setup for this row
+    fumen = row["Setup"]
+    previous_setup_id = row["Previous Setup"]
+
+    # add to setups
+    setups.append(fumen)
+
+    # go through the previous setups
+    while previous_setup_id:
+        
+        try:
+            # find the row that had the previous setup id
+            row = queryWhere(db, where=f"ID={previous_setup_id}")[0]
+        except:
+            # error
+            raise ValueError(f"The previous setup {previous_setup_id} was not found")
+
+        # get the fumen and previous setup for this row
+        fumen = row["Setup"]
+        previous_setup_id = row["Previous Setup"]
+
+        # add to setups
+        setups.append(fumen)
+
+    # reverse the order of the fumens
+    setups.reverse()
+
+    return setups
+
 def get_cover_data(db: list[dict], overwrite: bool = False) -> list[dict]:
     '''
     Run cover on setups to get the cover data for the setup from cover dependency
@@ -109,63 +159,20 @@ def get_cover_data(db: list[dict], overwrite: bool = False) -> list[dict]:
             continue
 
         # check if the cover data before is different after computing it
-        if previous_cover_data and previous_cover_data != bitstr:
-            print(f"{row['ID']} previous cover data differ from the new calculated value {previous_cover_data} -> {bitstr}")
+        if previous_cover_data and previous_cover_data != bin2hex(bitstr):
+            print(f"{row['ID']} previous cover data differ from the new calculated value {previous_cover_data} -> {bin2hex(bitstr)}")
             
             # overwrite
             if overwrite:
-                row["Cover Data"] = bitstr
+                row["Cover Data"] = bin2hex(bitstr)
         
         else:
             # update the cover data
-            row["Cover Data"] = bitstr
+            row["Cover Data"] = bin2hex(bitstr)
 
         outfile.close()
 
     return db
-
-def get_order_of_setups(row: dict, db: list[dict]) -> list[str]:
-    '''
-    Get the previous setups to this setup
-
-    Parameter:
-        row (dict): a row in database format as a dictionary
-        db (list): a list of the rows in the database
-
-    Return:
-        list[str]: fumens ordered by the first setup to build to last one
-    '''
-
-    setups = []
-    
-    # get the fumen and previous setup for this row
-    fumen = row["Setup"]
-    previous_setup_id = row["Previous Setup"]
-
-    # add to setups
-    setups.append(fumen)
-
-    # go through the previous setups
-    while previous_setup_id:
-        
-        try:
-            # find the row that had the previous setup id
-            row = queryWhere(db, where=f"ID={previous_setup_id}")[0]
-        except:
-            # error
-            raise ValueError(f"The previous setup {previous_setup_id} was not found")
-
-        # get the fumen and previous setup for this row
-        fumen = row["Setup"]
-        previous_setup_id = row["Previous Setup"]
-
-        # add to setups
-        setups.append(fumen)
-
-    # reverse the order of the fumens
-    setups.reverse()
-
-    return setups
     
 if __name__ == "__main__":
     from utils.directories import FILENAMES
