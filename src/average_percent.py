@@ -1,7 +1,8 @@
 from fractions import Fraction
 from utils.pieces import sortQueues, extendPieces
 
-def add_queue_to_tree(covering_tree: dict, queue: str, fraction: Fraction) -> bool:
+# DEBUG
+def add_queue_to_tree(covering_tree: dict, queue: str, fraction: tuple[Fraction, str]) -> bool:
     '''
     Adds a queue with its percent to a tree for each queue
 
@@ -31,7 +32,7 @@ def add_queue_to_tree(covering_tree: dict, queue: str, fraction: Fraction) -> bo
     if "chance" in node:
 
         # compare the chance to the chance for this queue
-        if node["chance"] < fraction:
+        if node["chance"][0] < fraction[0]:
             node["chance"] = fraction
             return True
 
@@ -72,7 +73,8 @@ def add_setup_cover_queues(db: list[dict], covering_tree: dict):
         pattern = line["Cover Dependence"]
 
         # convert the fraction in db to a fraction obj
-        percent = Fraction(line["Solve Fraction"])
+        # DEBUG
+        percent = (Fraction(line["Solve Fraction"]), line["Setup"])
 
         # get the queues from cover dependence
         queues = extendPieces(pattern)
@@ -116,10 +118,18 @@ def read_tree_stats(covering_tree: dict, general_pattern: str) -> dict:
     # get the queues from the pattern
     queues = extendPieces(general_pattern)
 
+    # DEBUG
+    from csv import DictWriter
+    outfile = open("output/book.csv","w")
+    heading = ["queue", "numerator", "denominator", "fumen"]
+    csvFile = DictWriter(outfile, fieldnames=heading)
+    csvFile.writeheader()
+
     # go through each queue
     for queue in queues:
         # current best solve chance
-        best_chance = -1
+        # DEBUG
+        best_chance: tuple[int, str] = (-1, "")
 
         # index for piece in queue
         queue_index = 0
@@ -135,31 +145,43 @@ def read_tree_stats(covering_tree: dict, general_pattern: str) -> dict:
             queue_index += 1
 
             # check if a chance is on this tree level and best one so far
-            if "chance" in node and best_chance < node["chance"]:
+            # DEBUG
+            if "chance" in node and best_chance[0] < node["chance"][0]:
                 best_chance = node["chance"]
 
+        row = {}
+        row["queue"] = queue
+        row["numerator"] = best_chance[0].numerator
+        row["denominator"] = best_chance[0].denominator
+        row["fumen"] = best_chance[1]
+        csvFile.writerow(row)
+
         # check if there's no percent for this queue
-        if best_chance == -1:
+        # DEBUG
+        if best_chance[0] == -1:
             # queue not covered
             result_stats["Not Covered Queues"].append(queue)
 
         else:
+
             # queue is covered
             # increment numerator
             result_stats["Cover Fraction"][0] += 1
 
             # check if this chance is the lowest chance of all queues
-            if best_chance < result_stats["Worst Fraction"]:
-                result_stats["Worst Fraction"] = best_chance
+            if best_chance[0] < result_stats["Worst Fraction"]:
+                result_stats["Worst Fraction"] = best_chance[0]
                 result_stats["Worst Queues"] = [queue]
 
             # append to list of queues with worst chance
-            elif best_chance == result_stats["Worst Fraction"]:
+            elif best_chance[0] == result_stats["Worst Fraction"]:
                 result_stats["Worst Queues"].append(queue)
 
-            result_stats["Average Fraction"] += best_chance
+            result_stats["Average Fraction"] += best_chance[0]
         
         result_stats["Cover Fraction"][1] += 1
+
+    outfile.close()
 
     # sort the queues that are not covered
     result_stats["Not Covered Queues"] = sortQueues(result_stats["Not Covered Queues"])
