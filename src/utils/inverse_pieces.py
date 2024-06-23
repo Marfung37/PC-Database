@@ -23,9 +23,9 @@ def matching_queue(queue: str, pattern: str, equality: Callable[[str, str], bool
             raise ValueError(f"The piece '{piece}' is not a valid piece")
 
     # get a generator obj of the output queues
-    outQueues = extendPieces(pattern)
+    outQueues = list(extendPieces(pattern))
 
-    return binary_search(queue, list(outQueues), equality=equality)
+    return binary_search(queue, outQueues, equality=equality)
 
 def compare_queues(q1: str, q2: str) -> bool:
     '''

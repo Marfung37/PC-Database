@@ -6,16 +6,10 @@ from utils.directories import ROOT, SFINDERPATH, KICKPATH
 from utils.pieces import extendPieces
 from utils.fileReader import queryWhere
 from utils.disassemble import disassemble
+from utils.formulas import bin2hex
 
 PATTERNSPATH = path.join(ROOT, "src", "input", "patterns.txt")
 COVERPATH = path.join(ROOT, "src", "output", "cover.csv")
-
-def bin2hex(binary: str) -> str:
-    '''
-    Convert a binary string into uppercase hex
-    '''
-
-    return hex(int(binary, 2))[2:].upper()
 
 def get_order_of_setups(row: dict, db: list[dict]) -> list[str]:
     '''
@@ -179,8 +173,7 @@ if __name__ == "__main__":
     from utils.fileReader import openFile
     import csv
 
-    db = openFile(FILENAMES[5])
-    db = queryWhere(db, where="ID>=51E57E9BFF")
+    db = openFile(FILENAMES[8])
 
     db = get_cover_data(db, overwrite=True)
 

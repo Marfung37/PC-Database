@@ -1,5 +1,6 @@
 from fractions import Fraction
-from utils.pieces import sortQueues, extendPieces
+from utils.pieces import sort_queues, extendPieces
+from utils.formulas import hex2bin
 
 def add_queue_to_tree(covering_tree: dict, queue: str, fraction: Fraction) -> bool:
     '''
@@ -84,7 +85,7 @@ def add_setup_cover_queues(db: list[dict], covering_tree: dict):
                 add_queue_to_tree(covering_tree, queue, percent)
         else:
             # read the bit string for if covered
-            bitStr = line["Cover Data"]
+            bitStr = hex2bin(line["Cover Data"]) 
             
             # add the queue if the bit is 1
             for queue, bit in zip(queues, bitStr):
@@ -162,14 +163,14 @@ def read_tree_stats(covering_tree: dict, general_pattern: str) -> dict:
         result_stats["Cover Fraction"][1] += 1
 
     # sort the queues that are not covered
-    result_stats["Not Covered Queues"] = sortQueues(result_stats["Not Covered Queues"])
+    result_stats["Not Covered Queues"] = sort_queues(result_stats["Not Covered Queues"])
 
     # calculate the cover percent
     cover_percent = result_stats['Cover Fraction'][0] / result_stats['Cover Fraction'][1]
     result_stats["Cover Percent"] = f"{cover_percent:.2%}"
 
     # sort the queues that have the lowest non-zero percent
-    result_stats["Worst Queues"] = sortQueues(result_stats["Worst Queues"])
+    result_stats["Worst Queues"] = sort_queues(result_stats["Worst Queues"])
 
     # calculate the percentage for worst fraction
     result_stats["Worst Percent"] = f"{float(result_stats['Worst Fraction']):.2%}"

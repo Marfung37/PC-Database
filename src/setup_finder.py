@@ -16,7 +16,7 @@ from utils.directories import FILENAMES
 from utils.fumen_utils import get_field
 from utils.queue_utils import sort_queue
 from utils.inverse_pieces import matching_queue
-from utils.formulas import PCNUM2LONUM
+from utils.formulas import PCNUM2LONUM, hex2bin
 from utils.fileReader import queryWhere, openFile
 
 # color of pieces when printed out to terminal using ANSI color codes
@@ -73,7 +73,7 @@ def setupFinder(pcNum: int, queue: str, previousSetup: str = "") -> list[dict]:
         if row["Cover Data"] == "1":
             found = True
 
-        elif row["Cover Data"][index] == "1":
+        elif hex2bin(row["Cover Data"])[index] == "1":
             found = True
 
         if found:
