@@ -40,7 +40,8 @@ def calculate_percent_in_range(db: list[dict], line_start: int, line_end: int, t
         pieces = split_colon_extended_pieces(pieces)
         
         # store the numerator and denominator
-        numerator = 0 denominator = 0
+        numerator = 0 
+        denominator = 0
         error = False
 
         # run pieces for each page of the setup

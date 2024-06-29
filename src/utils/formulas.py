@@ -8,7 +8,7 @@ def hex2bin(hex_string: str) -> str:
     binary = (bin(int(hex_string[:-1], 16))[2:]).zfill(length)
 
     # add last hex digit
-    binary += bin(int(hex_string[-1], 16))[2:]
+    binary += (bin(int(hex_string[-1], 16))[2:]).zfill(4)
 
     return binary
 
@@ -82,5 +82,4 @@ def PCNUM(pieces: int, minos: int = 0) -> int:
 if __name__ == "__main__":
     print(PCNUM2LONUM(1))
     print(LONUM2PCNUM(7))
-    print(bin2hex("00001"))
-    print(hex2bin(bin2hex("00001")))
+    print(hex2bin("34DFD7"))

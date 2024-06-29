@@ -66,7 +66,7 @@ def get_cover_data(db: list[dict], overwrite: bool = False) -> list[dict]:
         list: a list of rows with the cover data replaced
     '''
 
-    # go through each row of the database
+    # go through each row of the 
     for row in db:
 
         # if the column has cover data filled in
@@ -173,7 +173,7 @@ if __name__ == "__main__":
     from utils.fileReader import openFile
     import csv
 
-    db = openFile(FILENAMES[8])
+    db = openFile("input/db.txt")
 
     db = get_cover_data(db, overwrite=True)
 
