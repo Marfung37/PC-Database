@@ -19,6 +19,8 @@ from utils.inverse_pieces import matching_queue
 from utils.formulas import PCNUM2LONUM, hex2bin
 from utils.fileReader import queryWhere, openFile
 
+from collections import Counter
+
 # color of pieces when printed out to terminal using ANSI color codes
 class PIECECOLORS:
     BLACK = '\033[30;40m'
@@ -54,7 +56,7 @@ def setupFinder(pcNum: int, queue: str, previousSetup: str = "") -> list[dict]:
 
     # get leftover pieces sorted
     leftover = sort_queue(queue[:PCNUM2LONUM(pcNum)])
-    
+
     # get the rows where the leftover matches
     rows = queryWhere(rows, where=f"Leftover={leftover}")
 
@@ -64,6 +66,11 @@ def setupFinder(pcNum: int, queue: str, previousSetup: str = "") -> list[dict]:
     # go through the rows
     for row in rows:
         found = False
+
+        # check if setup contains the pieces from queue accessible
+        if not Counter(row["Build"]) <= Counter(queue[:len(row["Build"]) + 1]):
+            continue
+
         index = matching_queue(queue, row["Cover Dependence"], equality=lambda x, y: y.startswith(x))
 
         if index == -1:

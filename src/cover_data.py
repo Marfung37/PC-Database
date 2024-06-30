@@ -173,7 +173,7 @@ if __name__ == "__main__":
     from utils.fileReader import openFile
     import csv
 
-    db = openFile("input/db.txt")
+    db = openFile(FILENAMES[2])
 
     db = get_cover_data(db, overwrite=True)
 
