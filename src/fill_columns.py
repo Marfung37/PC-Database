@@ -33,7 +33,7 @@ def generate_id(row: dict) -> str:
     build_piece_counts = Counter(build)
 
     # PC number
-    pc_num: str = bin(LONUM2PCNUM(len(leftover))).zfill(3)[2:]
+    pc_num: str = bin(LONUM2PCNUM(len(leftover)))[2:].zfill(3)
 
     # edge case that I doubt will ever be used
     four_duplicate: bool = 4 in build_piece_counts.values()
@@ -54,14 +54,15 @@ def generate_id(row: dict) -> str:
     piece_existance: str = "".join(('1' if piece in leftover else '0' for piece in BAG))
 
     # length of build
-    build_length: str = bin(len(build)).zfill(4)[2:]
+    build_length: str = bin(len(build))[2:].zfill(4)
 
     # get piece counts
-    piece_counts_binary = "".join((bin(build_piece_counts[piece]).zfill(2)[2:] if piece in build_piece_counts else "00" for piece in BAG))
+    piece_counts_binary = "".join((bin(build_piece_counts[piece])[2:].zfill(2) if piece in build_piece_counts else "00" for piece in BAG))
 
     # unique id
     unique_id: str = '1' * 8
 
+    # 1 + 3 + 3 + 7 + 4 + 14 + 8
     binary_id = first_bit + pc_num + duplicate_piece + piece_existance + build_length + piece_counts_binary + unique_id
 
     return binary_id
