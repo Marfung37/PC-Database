@@ -9,7 +9,6 @@ import re
 # bag constant
 BAG = "TILJSZO"
 
-
 # sort queues
 def sort_queues(queues: Iterable[str]) -> list[str]:
     """
