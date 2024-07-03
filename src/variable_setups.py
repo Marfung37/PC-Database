@@ -12,8 +12,6 @@
 import py_fumen_py as pf
 from itertools import combinations
 
-from utils.disassemble import disassemble
-from utils.assemble import assemble
 from utils.queue_utils import MINOVALS
 from utils.fumen_utils import get_pieces, field_to_fumen
 
@@ -65,21 +63,21 @@ def variable_setups(fumen: str, choice: int = 1) -> str:
         raise ValueError(f"Fumen passed to 'variable_setups' has {len(pages)} pages instead of 2 pages")
 
     # get the required and optional pages
+    required_page: pf.Page
+    optional_page: pf.Page
     required_page, optional_page = pages
 
-    # glue the required page
-    required_pieces_pages = pf.decode(
-        disassemble(field_to_fumen(required_page.field))[0][0]
-    )
+    if required_page.field is None or optional_page.field is None:
+        raise ValueError("Page fields are not defined")
+
+    # TODO: fix problem with if second page has a line clear but first doesn't
 
     # clear line clears in each of the pages
     required_field_cleared = required_page.field.copy()
-    required_field_cleared.clear_line()
     optional_field_cleared = optional_page.field.copy()
-    optional_field_cleared.clear_line()
 
     # get the optional_pieces
-    optional_pieces = get_pieces(field_to_fumen(
+    optional_pieces: list[pf.Operation] = get_pieces(field_to_fumen(
         field_diff(optional_field_cleared, required_field_cleared),
     ), operations = True)[0]
 
@@ -96,19 +94,16 @@ def variable_setups(fumen: str, choice: int = 1) -> str:
     for combo in piece_combinations:
         chosen_pieces = (optional_pieces[c] for c in combo)
 
-        # make copy of the required pieces as the start of the new pages
-        new_pages = required_pieces_pages[:]
+        # make copy of the required page as the start of the new pages
+        page: pf.Page = pf.Page()
+        page.field = required_page.field.copy()
         
         # add the operations as new page 
         for piece in chosen_pieces:
-            new_pages.append(pf.Page(operation=piece))
+            page.field.drop(operation = piece, place = True)
 
-        # combine all the pieces into one page
-        assembled_fumen = assemble(pf.encode(new_pages), print_error=False)[0]
-        variable_page = pf.decode(assembled_fumen)[0]
-        
         # add to rest of the variable pages
-        variable_pages.append(variable_page)
+        variable_pages.append(page)
         
     # encode the variable pages to one fumen
     variable_fumen = pf.encode(variable_pages)        
