@@ -172,7 +172,7 @@ def check_mirrors(db: list[dict],
     return db
 
 if __name__ == "__main__":
-    from utils.directories import FILENAMES
+    from utils.constants import FILENAMES
     from utils.fileReader import openFile, queryWhere
 
     db = openFile(FILENAMES[8])

@@ -22,3 +22,8 @@ FILENAMES = {
     7: os.path.join(ROOT, "tsv", "7thPC.tsv"),
     8: os.path.join(ROOT, "tsv", "8thPC.tsv"),
 }
+
+BUILDDELIMITOR = ":"
+PREVSETUPDELIMITOR = ":"
+NEXTSETUPDELIMITOR = ":"
+PIECESDELIMITOR = ":"

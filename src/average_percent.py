@@ -258,7 +258,7 @@ def user_input() -> tuple[int, str, str, bool, bool]:
 def main():
     '''Main function to handle user input and display output'''
 
-    from utils.directories import FILENAMES
+    from utils.constants import FILENAMES
     from utils.fileReader import openFile, queryWhere
     
     pc_num, where_str, general_pattern, not_covered, worst_queues = user_input()

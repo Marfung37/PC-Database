@@ -3,9 +3,9 @@ import threading
 import subprocess
 
 from utils.fumen_utils import is_pc, get_height
-from utils.queue_utils import split_colon_extended_pieces
+from utils.queue_utils import split_extended_pieces
 from utils.pieces import extendPieces
-from utils.directories import ROOT, SFINDERPATH, KICKPATH
+from utils.constants import ROOT, SFINDERPATH, KICKPATH
 
 def calculate_percent_in_range(db: list[dict], line_start: int, line_end: int, thread_num: int = 1):
     '''
@@ -36,8 +36,8 @@ def calculate_percent_in_range(db: list[dict], line_start: int, line_end: int, t
         if pieces == 'NULL':
             continue
 
-        # split by colon for each
-        pieces = split_colon_extended_pieces(pieces)
+        # split pieces
+        pieces = split_extended_pieces(pieces)
         
         # store the numerator and denominator
         numerator = 0 
@@ -165,7 +165,7 @@ def check_percents(db: list[dict], threads: int = 4) -> list[dict]:
 
 if __name__ == "__main__":
     import os
-    from utils.directories import FILENAMES
+    from utils.constants import FILENAMES
     from utils.fileReader import openFile, queryWhere
 
     db = openFile(FILENAMES[6])

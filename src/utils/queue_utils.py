@@ -4,6 +4,7 @@ import re
 from typing import Callable
 from py_fumen_py import Mino
 from .pieces import extendPieces
+from .constants import PIECESDELIMITOR
 
 # bag constant
 BAG = "TILJSZO"
@@ -135,8 +136,8 @@ def extended_pieces_equals(pattern1: str, pattern2: str, equals: Callable[[str, 
     '''
 
     # if coming from the database, could separated by colons
-    pattern1_split = split_colon_extended_pieces(pattern1)
-    pattern2_split = split_colon_extended_pieces(pattern2)
+    pattern1_split = split_extended_pieces(pattern1)
+    pattern2_split = split_extended_pieces(pattern2)
 
     for pattern1_part, pattern2_part in zip(pattern1_split, pattern2_split):
         # compute the two queues
@@ -150,9 +151,9 @@ def extended_pieces_equals(pattern1: str, pattern2: str, equals: Callable[[str, 
 
     return True
 
-def split_colon_extended_pieces(pattern: str) -> list[str]:
+def split_extended_pieces(pattern: str) -> list[str]:
     '''
-    Split by colon for extended pieces found in database
+    Split by delimitor for extended pieces found in database
 
     Parameter:
         pattern (str): a extended pieces pattern
@@ -161,7 +162,8 @@ def split_colon_extended_pieces(pattern: str) -> list[str]:
         list: a list of extended pieces
     '''
 
-    splitted_pattern = map("".join, re.findall("(.+?{.*?}):|([^{}]+?):|(.+?)$", pattern))
+    delim = PIECESDELIMITOR
+    splitted_pattern = map("".join, re.findall(f"(.+?{{.*?}}){delim}|([^{{}}]+?){delim}|(.+?)$", pattern))
 
     return list(splitted_pattern)
 
@@ -177,9 +179,9 @@ def extended_pieces_startswith(pattern_short: str, pattern_long: str) -> bool:
         bool: whether all the long queues start with some queue in the short queues
     '''
 
-    # if coming from the database, could separated by colons
-    pattern_short_split = split_colon_extended_pieces(pattern_short)
-    pattern_long_split = split_colon_extended_pieces(pattern_long)
+    # if coming from the database
+    pattern_short_split = split_extended_pieces(pattern_short)
+    pattern_long_split = split_extended_pieces(pattern_long)
 
     for short_part, long_part in zip(pattern_short_split, pattern_long_split):
         # compute the two queues

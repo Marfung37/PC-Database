@@ -2,7 +2,7 @@ import subprocess
 from csv import reader
 from os import path
 
-from utils.directories import ROOT, SFINDERPATH, KICKPATH
+from utils.constants import ROOT, SFINDERPATH, KICKPATH
 from utils.pieces import extendPieces
 from utils.fileReader import queryWhere
 from utils.disassemble import disassemble
@@ -169,7 +169,7 @@ def get_cover_data(db: list[dict], overwrite: bool = False) -> list[dict]:
     return db
     
 if __name__ == "__main__":
-    from utils.directories import FILENAMES
+    from utils.constants import FILENAMES
     from utils.fileReader import openFile
     import csv
 

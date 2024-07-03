@@ -1,6 +1,6 @@
 # Fill out the rest of the columns and verify columns are reasonable
 
-from utils.directories import FILENAMES
+from utils.constants import FILENAMES, BUILDDELIMITOR
 from utils.fileReader import queryWhere
 from utils.formulas import LONUM2PCNUM
 from utils.queue_utils import BAG, PIECEVALS, sort_queue
@@ -26,12 +26,12 @@ def generate_id(row: dict) -> str:
     # check if leftover and build follow expected format
     if not re.match(f"[{BAG}]+", row["Leftover"]):
         raise ValueError("Leftover does not follow expected format of pieces TILJSZO")
-    if not re.match(f"([{BAG}];?)+", row["Build"]):
+    if not re.match(f"([{BAG}]{BUILDDELIMITOR}?)+", row["Build"]):
         raise ValueError("Build does not follow expected format of pieces TILJSZO delimitated by semicolon for multiple setups")
 
     # id based on leftover and first part of build
     leftover = row["Leftover"]
-    build = row["Build"].split(";")[0]
+    build = row["Build"].split(BUILDDELIMITOR)[0]
 
     leftover_piece_counts = Counter(leftover)
     build_piece_counts = Counter(build)
@@ -88,13 +88,13 @@ def generate_build(row: dict) -> str:
     build: str
 
     # get the pieces from the setup
-    pieces: list[str] = get_pieces(row["Setup"])
-    build_lst = list(map(sort_queue, map("".join, pieces)))
+    pieces = get_pieces(row["Setup"])
+    build_lst = list(map(sort_queue, map("".join, map(str, pieces))))
 
     if len(set(build_lst)) == 1:
         build = build_lst[0]
     else:
-        build = ":".join(build_lst)
+        build = BUILDDELIMITOR.join(build_lst)
 
     return build
 
@@ -122,7 +122,7 @@ def generate_cover_dependence(row: dict) -> str:
     else:
         leftover_prefix = f"[{row["Leftover"]}]!"
 
-    for build in row["Build"].split(";"):
+    for build in row["Build"].split(BUILDDELIMITOR):
         build_counter = Counter(build)
 
 
@@ -160,7 +160,7 @@ def fill_columns(db: list[dict], print_disprepancy: bool = True) -> None:
         # fill build
         update(row, "Build", 
                lambda: generate_build(row),
-               lambda old, new: new != old.split(';')[0])
+               lambda old, new: new != old.split(BUILDDELIMITOR)[0])
 
         # fill id
         update(row, "ID", lambda: generate_id(row))
@@ -169,7 +169,7 @@ def fill_columns(db: list[dict], print_disprepancy: bool = True) -> None:
 
     
 if __name__ == "__main__":
-    from utils.directories import FILENAMES
+    from utils.constants import FILENAMES
     from utils.fileReader import openFile
     import csv
 

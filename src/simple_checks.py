@@ -3,6 +3,7 @@
 from utils.fileReader import queryWhere
 from utils.queue_utils import extended_pieces_equals, extended_pieces_startswith
 from utils.fumen_utils import permutated_equals
+from utils.constants import PREVSETUPDELIMITOR, NEXTSETUPDELIMITOR
 from fill_columns import generate_build
 
 def is_sorted(db: list[dict]) -> bool:
@@ -141,7 +142,7 @@ def check_oqb(db: list[dict], print_error: bool = True) -> list[list[dict]]:
     for row in next_setup_rows:
         prev_id = row["ID"]
         cover_dependence = row["Cover Dependence"]
-        next_setups_id = row["Next Setup"].split(":")
+        next_setups_id = row["Next Setup"].split(NEXTSETUPDELIMITOR)
 
         # rows with issues
         issue_rows = [row]
@@ -166,15 +167,16 @@ def check_oqb(db: list[dict], print_error: bool = True) -> list[list[dict]]:
                 if not issue:
                     issue_rows.append(next_setup)
                     issue = True
-        
-        result.append(issue_rows)
+
+        if len(issue_rows) > 1:
+            result.append(issue_rows)
     
     # check if the each previous setup has the same next setup
     for row in previous_setup_rows:
         prev_id = row["Previous Setup"]
         prev_setup = queryWhere(db, f"ID={prev_id}")[0]
 
-        if row["ID"] not in prev_setup["Next Setup"].split(":"):
+        if row["ID"] not in prev_setup["Next Setup"].split(PREVSETUPDELIMITOR):
             if print_error:
                 print(f"{prev_id} is missing the next setup {row['ID']}")
             result.append([row, prev_setup])
@@ -184,10 +186,10 @@ def check_oqb(db: list[dict], print_error: bool = True) -> list[list[dict]]:
 
 if __name__ == "__main__":
     from utils.fileReader import openFile
-    from utils.directories import FILENAMES
+    from utils.constants import FILENAMES
 
     for i in range(1, 9):
-        print(duplicate_rows(openFile(FILENAMES[i])))
+        print(check_oqb(openFile(FILENAMES[i])))
 
                 
 

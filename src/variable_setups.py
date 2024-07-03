@@ -70,16 +70,17 @@ def variable_setups(fumen: str, choice: int = 1) -> str:
     if required_page.field is None or optional_page.field is None:
         raise ValueError("Page fields are not defined")
 
-    a = field_to_fumen(
+    optional_pieces_page = field_to_fumen(
         field_diff(optional_page.field, required_page.field),
     )
 
-    print(a, get_pieces(a))
-
     # get the optional_pieces
-    optional_pieces: list[pf.Operation] = get_pieces(field_to_fumen(
-        field_diff(optional_page.field, required_page.field),
-    ), operations = True)[0]
+    optional_pieces: list[pf.Operation] | str 
+    optional_pieces = get_pieces(optional_pieces_page, operations = True)[0]
+
+    # shouldn't happen
+    if isinstance(optional_pieces, str):
+        raise RuntimeError("Optional pieces were able to be type of string")
 
     # sort the pieces
     optional_pieces.sort(key=lambda x: MINOVALS[x.mino])

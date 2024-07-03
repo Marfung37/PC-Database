@@ -12,7 +12,7 @@
 #
 
 # imports
-from utils.directories import FILENAMES
+from utils.constants import FILENAMES
 from utils.fumen_utils import get_field
 from utils.queue_utils import sort_queue
 from utils.inverse_pieces import matching_queue
