@@ -111,7 +111,7 @@ def assign_build(db: list[dict], print_error: bool = True, overwrite: bool = Fal
 
     for row in db:
         # get the pieces and sort them
-        fumen_pieces = map("".join, get_pieces(row["Setup"], operations=False))
+        fumen_pieces = map("".join, get_pieces(row["Setup"]))
         build = ":".join(map(sort_queue, fumen_pieces))
 
         if overwrite:

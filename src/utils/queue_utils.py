@@ -5,6 +5,9 @@ from typing import Callable
 from py_fumen_py import Mino
 from .pieces import extendPieces
 
+# bag constant
+BAG = "TILJSZO"
+
 MINOVALS = {
     Mino.T: 1,
     Mino.I: 2,
@@ -31,6 +34,9 @@ MIRRORPIECES = {
     'S': 'Z',
     'Z': 'S',
 }
+
+def MINO2PIECE(m: Mino):
+    return BAG[MINOVALS[m] - 1]
 
 def sort_queue(queue: str) -> str:
     '''
@@ -203,6 +209,3 @@ def extended_pieces_startswith(pattern_short: str, pattern_long: str) -> bool:
                 return False
 
     return True
-
-   
-

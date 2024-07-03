@@ -3,20 +3,24 @@
 from utils.directories import FILENAMES
 from utils.fileReader import queryWhere
 from utils.formulas import LONUM2PCNUM
-from utils.pieces import BAG
-from utils.queue_utils import PIECEVALS
+from utils.queue_utils import BAG, PIECEVALS, sort_queue
+from utils.fumen_utils import get_pieces
 from collections import Counter
 import re
 
 def generate_id(row: dict) -> str:
     '''
-        Generate an id for a given row
+    Generate an id for a given row
 
-        Parameters:
-            row - row in database that should have "Leftover" and "Build"
+    Expected Filled:
+        Leftover
+        Build
 
-        Return:
-            hexadecimal id for that setup
+    Parameters:
+        row (dict): row in database
+
+    Return:
+        hexadecimal id for that setup
     '''
 
     # check if leftover and build follow expected format
@@ -25,7 +29,7 @@ def generate_id(row: dict) -> str:
     if not re.match(f"([{BAG}];?)+", row["Build"]):
         raise ValueError("Build does not follow expected format of pieces TILJSZO delimitated by semicolon for multiple setups")
 
-    # id based on leftover and first part of  build
+    # id based on leftover and first part of build
     leftover = row["Leftover"]
     build = row["Build"].split(";")[0]
 
@@ -67,6 +71,118 @@ def generate_id(row: dict) -> str:
 
     return binary_id
 
+def generate_build(row: dict) -> str:
+    '''
+    Compute the pieces in the setup
+
+    Expected Filled:
+        Setup
+
+    Parameters:
+        row (dict): row in database
+
+    Return:
+        pieces in the setup
+    '''
+
+    build_lst: list[str] = []
+
+    # each setup
+    for setup in row["Setup"].split(':'):
+        # get the pieces from the setup
+        fumen_pieces: str = "".join(get_pieces(setup))
+        build_lst.append(fumen_pieces)
+
+    build: str = ":".join(map(sort_queue, build_lst))
+
+    return build
+
+def generate_cover_dependence(row: dict) -> str:
+    '''
+    Generate a default cover dependence for the row
+
+    Expected Filled:
+        Leftover
+        Build
+
+    Parameters:
+        row (dict): row in database
+    '''
+
+    cover_dependence: str = ""
+
+    # count pieces in leftover
+    leftover_prefix: str = ""
+    leftover_counter = Counter(row["Leftover"])
+    duplicate = leftover_counter.most_common(1)
+
+    if duplicate[1] == 2:
+        leftover_prefix = f"{duplicate[0]},[{''.join(leftover_counter.keys())}]!"
+    else:
+        leftover_prefix = f"[{row["Leftover"]}]!"
+
+    for build in row["Build"].split(";"):
+        build_counter = Counter(build)
+
+
+    return cover_dependence
+
+
+def fill_columns(db: list[dict], print_disprepancy: bool = True) -> None:
+    '''
+    Modify database data to fill out rest of default columns, excluding Leftover, Setup, Previous Setup, and Next Setup, which first two are required.
+    If a column has already been filled out, no change will be made.
+
+    Expected Filled:
+        Leftover
+        Setup
+
+    Parameters:
+        db (list): a list of the rows in the database
+        print_disprepancy (bool) - whether to print disprepancies (Build, Cover Data, Solve %, Solve Fraction)
+    '''
+
+    def update(row: dict, key: str, func, cond = lambda old, new: new != old):
+        if print_disprepancy or not row[key]:
+            new = func()
+
+            if print_disprepancy and row[key] and cond(row[key], new):
+                print(f"Computed '{key}' differs '{row[key]}' -> '{new}' in {row}")
+            else:
+                row[key] = new
+
+    for row in db:
+        # check if the necessary columns are filled
+        if not (row["Leftover"] and row["Setup"]):
+            raise ValueError(f"Required fields 'Leftover' and 'Setup' are missing in {row}")
+
+        # fill build
+        update(row, "Build", 
+               lambda: generate_build(row),
+               lambda old, new: new != old.split(';')[0])
+
+        # fill id
+        update(row, "ID", lambda: generate_id(row))
+
+        # cover dependence based on leftover and build
+
+    
 if __name__ == "__main__":
-    print(len(generate_id({"Leftover": "IILJ", "Build": "ILJ"})))
+    from utils.directories import FILENAMES
+    from utils.fileReader import openFile
+    import csv
+
+    db = openFile("input/db.tsv")
+
+    fill_columns(db)
+
+    outfile = open("output/filled_columns.tsv", "w")
+
+    fieldnames = db[0].keys()
+    writer = csv.DictWriter(outfile, fieldnames=fieldnames, delimiter='\t')
+
+    writer.writeheader()
+    writer.writerows(db)
+
+    outfile.close()
 

@@ -77,11 +77,11 @@ def variable_setups(fumen: str, choice: int = 1) -> str:
     required_field_cleared.clear_line()
     optional_field_cleared = optional_page.field.copy()
     optional_field_cleared.clear_line()
-    
+
     # get the optional_pieces
     optional_pieces = get_pieces(field_to_fumen(
-        field_diff(optional_field_cleared, required_field_cleared)
-    ))[0]
+        field_diff(optional_field_cleared, required_field_cleared),
+    ), operations = True)[0]
 
     # sort the pieces
     optional_pieces.sort(key=lambda x: MINOVALS[x.mino])

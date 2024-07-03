@@ -3,6 +3,7 @@
 import py_fumen_py as pf
 from typing import Callable, Optional
 from .disassemble import disassemble
+from .queue_utils import MINO2PIECE
 
 def _decode_wrapper(fumen: str) -> list[pf.Page]:
     '''
@@ -70,7 +71,7 @@ def field_to_fumen(field: pf.Field) -> str:
 
     return pf.encode([pf.Page(field=field)])
 
-def get_pieces(fumen: str, operations: bool = True) -> list:
+def get_pieces(fumen: str, operations: bool = False) -> list:
     '''
     Get the pieces from the field
 
@@ -87,6 +88,10 @@ def get_pieces(fumen: str, operations: bool = True) -> list:
 
     # disassemble the fumen
     glue_fumens = disassemble(fumen)
+
+    # if getting pieces then only need to view first glue fumen
+    if not operations:
+        glue_fumens = [glue_fumens[0]]
 
     # for each fumen output
     for glue_fumen in glue_fumens:
@@ -108,9 +113,12 @@ def get_pieces(fumen: str, operations: bool = True) -> list:
             if operations:
                 fumen_result.append(page_op)
             else:
-                fumen_result.append(page_op.mino)
+                # add piece to result
+                result.append(MINO2PIECE(page_op.mino))
 
-        result.append(fumen_result)
+        # add set of operations to result
+        if operations:
+            result.append(fumen_result)
             
     return result
 
