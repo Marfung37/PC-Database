@@ -85,15 +85,16 @@ def generate_build(row: dict) -> str:
         pieces in the setup
     '''
 
-    build_lst: list[str] = []
+    build: str
 
-    # each setup
-    for setup in row["Setup"].split(':'):
-        # get the pieces from the setup
-        fumen_pieces: str = "".join(get_pieces(setup))
-        build_lst.append(fumen_pieces)
+    # get the pieces from the setup
+    pieces: list[str] = get_pieces(row["Setup"])
+    build_lst = list(map(sort_queue, map("".join, pieces)))
 
-    build: str = ":".join(map(sort_queue, build_lst))
+    if len(set(build_lst)) == 1:
+        build = build_lst[0]
+    else:
+        build = ":".join(build_lst)
 
     return build
 

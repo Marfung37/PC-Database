@@ -70,15 +70,15 @@ def variable_setups(fumen: str, choice: int = 1) -> str:
     if required_page.field is None or optional_page.field is None:
         raise ValueError("Page fields are not defined")
 
-    # TODO: fix problem with if second page has a line clear but first doesn't
+    a = field_to_fumen(
+        field_diff(optional_page.field, required_page.field),
+    )
 
-    # clear line clears in each of the pages
-    required_field_cleared = required_page.field.copy()
-    optional_field_cleared = optional_page.field.copy()
+    print(a, get_pieces(a))
 
     # get the optional_pieces
     optional_pieces: list[pf.Operation] = get_pieces(field_to_fumen(
-        field_diff(optional_field_cleared, required_field_cleared),
+        field_diff(optional_page.field, required_page.field),
     ), operations = True)[0]
 
     # sort the pieces

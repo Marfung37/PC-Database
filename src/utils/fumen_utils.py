@@ -71,7 +71,7 @@ def field_to_fumen(field: pf.Field) -> str:
 
     return pf.encode([pf.Page(field=field)])
 
-def get_pieces(fumen: str, operations: bool = False) -> list:
+def get_pieces(fumen: str, operations: bool = False) -> list[list[pf.Operation] | str]:
     '''
     Get the pieces from the field
 
@@ -87,39 +87,33 @@ def get_pieces(fumen: str, operations: bool = False) -> list:
     result = []
 
     # disassemble the fumen
-    glue_fumens = disassemble(fumen)
-
-    # if getting pieces then only need to view first glue fumen
-    if not operations:
-        glue_fumens = [glue_fumens[0]]
+    glue_fumens = disassemble(fumen, keep_duplicates=False, print_error=False)
 
     # for each fumen output
     for glue_fumen in glue_fumens:
-        fumen_result = []
+        for gf in glue_fumen:
+            fumen_result_ops: list[pf.Operation] = []
+            fumen_result_pieces: str = ""
 
-        # get the first result from glue fumen for that page
-        glue_fumen = glue_fumen[0]
-        
-        # decode the fumen for the pages
-        pages = _decode_wrapper(glue_fumen)
+            pages = _decode_wrapper(gf)
 
-        for page in pages:
-            page_op = page.operation
+            for page in pages:
+                page_op: pf.Operation | None = page.operation
 
-            # if there's a page with no operations
-            if page_op is None:
-                continue
+                # if there's a page with no operations
+                if page_op is None:
+                    continue
+
+                if operations:
+                    fumen_result_ops.append(page_op)
+                else:
+                    fumen_result_pieces += MINO2PIECE(page_op.mino)
 
             if operations:
-                fumen_result.append(page_op)
+                result.append(fumen_result_ops)
             else:
-                # add piece to result
-                result.append(MINO2PIECE(page_op.mino))
+                result.append(fumen_result_pieces)
 
-        # add set of operations to result
-        if operations:
-            result.append(fumen_result)
-            
     return result
 
 def is_pc(fumen: str) -> bool:

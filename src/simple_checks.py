@@ -3,6 +3,7 @@
 from utils.fileReader import queryWhere
 from utils.queue_utils import extended_pieces_equals, sort_queue, extended_pieces_startswith
 from utils.fumen_utils import permutated_equals, get_pieces
+from fill_columns import generate_build
 
 def is_sorted(db: list[dict]) -> bool:
     '''
@@ -111,8 +112,7 @@ def assign_build(db: list[dict], print_error: bool = True, overwrite: bool = Fal
 
     for row in db:
         # get the pieces and sort them
-        fumen_pieces = map("".join, get_pieces(row["Setup"]))
-        build = ":".join(map(sort_queue, fumen_pieces))
+        build = generate_build(row)
 
         if overwrite:
             row["Build"] = build
@@ -190,7 +190,7 @@ if __name__ == "__main__":
     from utils.directories import FILENAMES
 
     for i in range(1, 9):
-        check_oqb(openFile(FILENAMES[i]))
+        assign_build(openFile(FILENAMES[i]))
 
                 
 

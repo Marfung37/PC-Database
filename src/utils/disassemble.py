@@ -130,7 +130,7 @@ def make_empty_field(field):
                 line[i] = Mino._
     return field
 
-def disassemble(fumen_codes, print_error=True, keep_invalid=True):
+def disassemble(fumen_codes, print_error=True, keep_duplicates=True, keep_invalid=True):
     # if fumen codes is just one fumen
     if isinstance(fumen_codes, str):
         fumen_codes = [fumen_codes]
@@ -153,6 +153,9 @@ def disassemble(fumen_codes, print_error=True, keep_invalid=True):
                 if print_error and not all_pieces_arr:
                     print(code, "couldn't be disassembled")
                     fumen_issues += 1
+
+                if not keep_duplicates:
+                    all_pieces_arr = all_pieces_arr[:1]
 
                 for pieces_arr in all_pieces_arr:
                     pages = [Page(field=empty_field, operation=pieces_arr[0])]
