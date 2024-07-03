@@ -58,15 +58,14 @@ def duplicate_rows(db: list[dict], check_pieces: bool = False) -> list[list[str]
 
         # find all rows that match
         row_num += 1
-        while row_num < len(db) and db[row_num]["ID"].startswith(sub_id):
+        while row_num < len(db) and db[row_num]["ID"][:8] == sub_id:
             possible_rows.append(db[row_num])
             row_num += 1
 
         # check pairwise each row
         for i in range(len(possible_rows)):
-            duplicates = [db[i]]
             for j in range(i + 1, len(possible_rows)):
-                row1, row2 = db[i], db[j]
+                row1, row2 = possible_rows[i], possible_rows[j]
                 
                 # check if the two setups are the same
                 same_fumen = permutated_equals(row1["Setup"], row2["Setup"])
@@ -77,6 +76,9 @@ def duplicate_rows(db: list[dict], check_pieces: bool = False) -> list[list[str]
 
                 # check cover dependence
                 same_cover_dependence = extended_pieces_equals(row1["Cover Dependence"], row2["Cover Dependence"])
+
+                if not same_cover_dependence:
+                    continue
 
                 # check pieces
                 same_pieces = False
@@ -90,12 +92,8 @@ def duplicate_rows(db: list[dict], check_pieces: bool = False) -> list[list[str]
                         same_pieces = extended_pieces_equals(row1["Pieces"], row2["Pieces"])
 
                 # if they have same cover dependence and same pieces (if relavent)
-                if same_cover_dependence and (not check_pieces or same_pieces):
-                    duplicates.append(row2)
-
-            # if there's duplicates
-            if len(duplicates) > 1:
-                result.append(duplicates)
+                if not check_pieces or same_pieces:
+                    result.append([row1["ID"], row2["ID"]])
 
     return result
 
@@ -189,7 +187,7 @@ if __name__ == "__main__":
     from utils.directories import FILENAMES
 
     for i in range(1, 9):
-        duplicate_rows(openFile(FILENAMES[i]))
+        print(duplicate_rows(openFile(FILENAMES[i])))
 
                 
 
