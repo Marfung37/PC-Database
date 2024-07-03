@@ -6,10 +6,23 @@ from utils.constants import ROOT, SFINDERPATH, KICKPATH
 from utils.pieces import extendPieces
 from utils.fileReader import queryWhere
 from utils.disassemble import disassemble
-from utils.formulas import bin2hex
 
 PATTERNSPATH = path.join(ROOT, "src", "input", "patterns.txt")
 COVERPATH = path.join(ROOT, "src", "output", "cover.csv")
+
+def _bin2hex(binary: str) -> str:
+    '''
+    Convert a binary string into uppercase hex
+
+    Reverses the binary string before conversion and prefix by length mod 4
+    '''
+
+    # add number of trailing zeros to be multiple of 4
+    length = (len(binary) + 3) // 4
+
+    hex_digits = str(len(binary) % 4) + ('%.*X' % (length, int(binary[::-1], 2)))
+
+    return hex_digits
 
 def get_order_of_setups(row: dict, db: list[dict]) -> list[str]:
     '''
@@ -92,10 +105,10 @@ def get_cover_data(db: list[dict], overwrite: bool = False) -> list[dict]:
 
         # get the corresponding order of setups to do
         setups = get_order_of_setups(row, db)
-
+        
         # output bit string
         bitstr = ""
-
+        
         # write the queues into the patterns file
         with open(PATTERNSPATH, "w") as infile:
             infile.write("\n".join(queues))
@@ -107,22 +120,20 @@ def get_cover_data(db: list[dict], overwrite: bool = False) -> list[dict]:
         sfinder_cmd = f"java -jar {SFINDERPATH} cover -t '{' '.join(map(' '.join, glue_fumens))}' -K {KICKPATH} " \
                      f"-d 180 -o {COVERPATH} -pp {PATTERNSPATH}"
         subprocess.run(sfinder_cmd.split(), stdout = subprocess.DEVNULL)
-
-        # DEBUG
-        # print(sfinderCmd)
+        
         
         # open the csv file
         outfile = open(COVERPATH, "r")
         csvfile = reader(outfile)
-
+        
         # skip header
         next(csvfile)
-
+        
         # go through each line
         for line in csvfile:
             # start at 1 as first column is queues
             fumen_num = 1
-
+        
             # go through all fumens, if all work then this queue is covered by the setup
             and_bool = True
             for fumens in glue_fumens:
@@ -131,41 +142,43 @@ def get_cover_data(db: list[dict], overwrite: bool = False) -> list[dict]:
                 for _ in fumens:
                     or_bool = or_bool or line[fumen_num] == "O"
                     fumen_num += 1
-                
+               
                 # check if this fumen is also possible
                 and_bool = and_bool and or_bool
-
+        
                 # if ever false can just break out
                 if not and_bool: break
-            
+           
             # create the bit string for the cover of the setup
             bitstr += "1" if and_bool else "0"
-    
-        # simplify the cover dependency completely describes the setup
-        if "0" not in bitstr:
-            bitstr = "1"
-
+           
         # check for error
         if "1" not in bitstr:
             # should at least cover one queue
             print(f"{row['ID']} return a cover of 0%")
             print(f"Cover dependency is written improperly or incorrect previous setup")
             continue
-
+        
+        # simplify the cover dependency completely describes the setup
+        if "0" not in bitstr:
+            cover_data = "1" # special case
+        else:
+            cover_data = _bin2hex(bitstr)
+        
         # check if the cover data before is different after computing it
-        if previous_cover_data and previous_cover_data != bin2hex(bitstr):
-            print(f"{row['ID']} previous cover data differ from the new calculated value {previous_cover_data} -> {bin2hex(bitstr)}")
-            
+        if previous_cover_data and previous_cover_data != cover_data:
+            print(f"{row['ID']} previous cover data differ from the new calculated value {previous_cover_data} -> {cover_data}")
+           
             # overwrite
             if overwrite:
-                row["Cover Data"] = bin2hex(bitstr)
+                row["Cover Data"] = cover_data
         
         else:
             # update the cover data
-            row["Cover Data"] = bin2hex(bitstr)
-
+            row["Cover Data"] = cover_data
+        
         outfile.close()
-
+        
     return db
     
 if __name__ == "__main__":
@@ -173,16 +186,17 @@ if __name__ == "__main__":
     from utils.fileReader import openFile
     import csv
 
-    db = openFile(FILENAMES[2])
+    for i in range(1, 9):
+        db = openFile(FILENAMES[i])
 
-    db = get_cover_data(db, overwrite=True)
+        db = get_cover_data(db, overwrite=True)
 
-    outfile = open("output/cover_data.tsv", "w")
+        outfile = open(f"output/cover_data{i}.tsv", "w")
 
-    fieldnames = db[0].keys()
-    writer = csv.DictWriter(outfile, fieldnames=fieldnames, delimiter='\t')
+        fieldnames = db[0].keys()
+        writer = csv.DictWriter(outfile, fieldnames=fieldnames, delimiter='\t')
 
-    writer.writeheader()
-    writer.writerows(db)
+        writer.writeheader()
+        writer.writerows(db)
 
-    outfile.close()
+        outfile.close()

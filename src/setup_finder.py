@@ -16,7 +16,7 @@ from utils.constants import FILENAMES
 from utils.fumen_utils import get_field
 from utils.queue_utils import sort_queue
 from utils.inverse_pieces import matching_queue
-from utils.formulas import PCNUM2LONUM, hex2bin
+from utils.formulas import PCNUM2LONUM
 from utils.fileReader import queryWhere, openFile
 
 from collections import Counter
@@ -80,7 +80,8 @@ def setupFinder(pcNum: int, queue: str, previousSetup: str = "") -> list[dict]:
         if row["Cover Data"] == "1":
             found = True
 
-        elif hex2bin(row["Cover Data"])[index] == "1":
+        # check if the index is a 1
+        elif int(row["Cover Data"], 16) & (1 << index):
             found = True
 
         if found:

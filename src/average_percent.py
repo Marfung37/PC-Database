@@ -1,6 +1,5 @@
 from fractions import Fraction
 from utils.pieces import sort_queues, extendPieces
-from utils.formulas import hex2bin
 
 def add_queue_to_tree(covering_tree: dict, queue: str, fraction: Fraction) -> bool:
     '''
@@ -85,12 +84,13 @@ def add_setup_cover_queues(db: list[dict], covering_tree: dict):
                 add_queue_to_tree(covering_tree, queue, percent)
         else:
             # read the bit string for if covered
-            bitStr = hex2bin(line["Cover Data"]) 
+            bit_str = int(line["Cover Data"], 16) 
             
             # add the queue if the bit is 1
-            for queue, bit in zip(queues, bitStr):
-                if bit == '1':
+            for queue in queues:
+                if bit_str & 1 == '1':
                     add_queue_to_tree(covering_tree, queue, percent)
+                bit_str >>= 1
 
 def read_tree_stats(covering_tree: dict, general_pattern: str) -> dict:
     '''

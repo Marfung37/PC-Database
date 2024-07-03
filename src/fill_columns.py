@@ -64,6 +64,7 @@ def generate_id(row: dict) -> str:
     piece_counts_binary = "".join((bin(build_piece_counts[piece])[2:].zfill(2) if piece in build_piece_counts else "00" for piece in BAG))
 
     # unique id
+    # TODO: get the unique id for this setup
     unique_id: str = '1' * 8
 
     # 1 + 3 + 3 + 7 + 4 + 14 + 8
@@ -115,19 +116,26 @@ def generate_cover_dependence(row: dict) -> str:
     # count pieces in leftover
     leftover_prefix: str = ""
     leftover_counter = Counter(row["Leftover"])
-    duplicate = leftover_counter.most_common(1)
+    duplicate: tuple[str, int] = leftover_counter.most_common(1)[0]
 
     if duplicate[1] == 2:
         leftover_prefix = f"{duplicate[0]},[{''.join(leftover_counter.keys())}]!"
     else:
-        leftover_prefix = f"[{row["Leftover"]}]!"
+        if row["Leftover"] == "TILJSZO":
+            leftover_prefix = "*p7"
+        else:
+            leftover_prefix = f"[{row["Leftover"]}]!"
 
+    pieces_used: str = ""
     for build in row["Build"].split(BUILDDELIMITOR):
         build_counter = Counter(build)
 
+        # other pieces used in the setup
+        pieces_used += "".join((build_counter - leftover_counter).elements())
+
+    cover_dependence = leftover_prefix + f",*p{len(pieces_used) + 1}{{{pieces_used}=1}}"
 
     return cover_dependence
-
 
 def fill_columns(db: list[dict], print_disprepancy: bool = True) -> None:
     '''
@@ -166,6 +174,7 @@ def fill_columns(db: list[dict], print_disprepancy: bool = True) -> None:
         update(row, "ID", lambda: generate_id(row))
 
         # cover dependence based on leftover and build
+        update(row, "Cover Dependence", lambda: generate_cover_dependence(row))
 
     
 if __name__ == "__main__":

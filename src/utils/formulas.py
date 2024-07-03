@@ -1,29 +1,4 @@
 # Various functions representing useful calculations
-def hex2bin(hex_string: str) -> str:
-    '''
-    Convert a hexadecimal string into binary preserving leading zeros
-    '''
-
-    length = (len(hex_string) - 1) * 4 
-    binary = (bin(int(hex_string[:-1], 16))[2:]).zfill(length)
-
-    # add last hex digit
-    binary += (bin(int(hex_string[-1], 16))[2:]).zfill(4)
-
-    return binary
-
-
-def bin2hex(binary: str) -> str:
-    '''
-    Convert a binary string into uppercase hex preserving leading zeros
-    '''
-
-    # add number of trailing zeros to be multiple of 4
-    length = (len(binary) + 3) // 4
-
-    hex_digits = '%.*x' % (length, int(binary, 2))
-
-    return hex_digits.upper()
 
 def PCNUM2LONUM(pcNum: int) -> int:
     '''
@@ -82,4 +57,3 @@ def PCNUM(pieces: int, minos: int = 0) -> int:
 if __name__ == "__main__":
     print(PCNUM2LONUM(1))
     print(LONUM2PCNUM(7))
-    print(hex2bin("34DFD7"))
