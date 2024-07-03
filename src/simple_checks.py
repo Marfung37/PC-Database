@@ -1,8 +1,8 @@
 # some basic checks
 
 from utils.fileReader import queryWhere
-from utils.queue_utils import extended_pieces_equals, sort_queue, extended_pieces_startswith
-from utils.fumen_utils import permutated_equals, get_pieces
+from utils.queue_utils import extended_pieces_equals, extended_pieces_startswith
+from utils.fumen_utils import permutated_equals
 from fill_columns import generate_build
 
 def is_sorted(db: list[dict]) -> bool:
@@ -51,7 +51,6 @@ def duplicate_rows(db: list[dict], check_pieces: bool = False) -> list[list[str]
 
     # go through the rows
     while row_num < len(db):
-
         possible_rows = [db[row_num]]
 
         # get the first 8 hexdigits
@@ -59,14 +58,14 @@ def duplicate_rows(db: list[dict], check_pieces: bool = False) -> list[list[str]
 
         # find all rows that match
         row_num += 1
-        while db[row_num]["ID"].startswith(sub_id):
+        while row_num < len(db) and db[row_num]["ID"].startswith(sub_id):
             possible_rows.append(db[row_num])
             row_num += 1
 
         # check pairwise each row
         for i in range(len(possible_rows)):
             duplicates = [db[i]]
-            for j in range(i, len(possible_rows)):
+            for j in range(i + 1, len(possible_rows)):
                 row1, row2 = db[i], db[j]
                 
                 # check if the two setups are the same
@@ -190,7 +189,7 @@ if __name__ == "__main__":
     from utils.directories import FILENAMES
 
     for i in range(1, 9):
-        assign_build(openFile(FILENAMES[i]))
+        duplicate_rows(openFile(FILENAMES[i]))
 
                 
 
