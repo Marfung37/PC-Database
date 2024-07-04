@@ -320,7 +320,7 @@ def generate_pieces(row: dict, skip_oqb: bool = True) -> str:
 
     return PIECESDELIMITOR.join(pieces)
 
-def fill_columns(db: list[dict], print_disprepancy: bool = True) -> None:
+def fill_columns(db: list[dict], print_disprepancy: bool = True, overwrite: bool = False) -> None:
     '''
     Modify database data to fill out rest of default columns, excluding Leftover, Setup, Previous Setup, and Next Setup, which first two are required.
     If a column has already been filled out, no change will be made.
@@ -345,6 +345,8 @@ def fill_columns(db: list[dict], print_disprepancy: bool = True) -> None:
                     "Setup": row["Setup"],
                 }
                 print(f"Computed '{key}' differs '{row[key]}' -> '{new}' in {simplified_row}")
+                if overwrite:
+                    row[key] = new
             else:
                 row[key] = new
 
@@ -364,16 +366,15 @@ def fill_columns(db: list[dict], print_disprepancy: bool = True) -> None:
 
         # pieces based on leftover and build
         # update(row, "Pieces", lambda: generate_pieces(row))
-
     
 if __name__ == "__main__":
     from utils.constants import FILENAMES
     from utils.fileReader import openFile
     import csv
 
-    db = openFile(FILENAMES[8])
+    db = openFile(FILENAMES[7])
 
-    fill_columns(db)
+    fill_columns(db, overwrite=True)
 
     outfile = open("output/filled_columns.tsv", "w")
 
