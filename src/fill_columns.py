@@ -105,7 +105,7 @@ def generate_build(row: dict) -> str:
 
     return build
 
-def generate_cover_dependence(row: dict) -> str:
+def generate_cover_dependence(row: dict, skip_oqb: bool = True) -> str:
     '''
     Generate a default cover dependence for the row
 
@@ -113,51 +113,86 @@ def generate_cover_dependence(row: dict) -> str:
         Leftover
         Build
 
+    Optionally Filled:
+        Previous Setup
+        Next Setup
+
     Parameters:
         row (dict): row in database
+        skip_oqb (bool): skip if previous/next setup filled as oqb
+
+    Return:
+        generated cover dependence for that row
     '''
 
     cover_dependence: str = ""
+
+    # skip if it a oqb setup
+    if skip_oqb and \
+        (
+            ("Previous Setup" in row and row["Previous Setup"]) or \
+            ("Next Setup" in row and row["Next Setup"])
+        ):
+        return cover_dependence
 
     # count pieces in leftover
     leftover_prefix: str = ""
     leftover_counter = Counter(row["Leftover"])
     duplicate: tuple[str, int] = leftover_counter.most_common(1)[0]
 
-    if duplicate[1] == 2:
-        leftover_prefix = f"{duplicate[0]},[{''.join(leftover_counter.keys())}]"
-        if len(row["Build"]) + 1 >= len(row["Leftover"]):
-            # exactly uses either one less or same number of pieces in leftover
-            leftover_prefix += "!"
-        else:
-            # only need one more than number of pieces in build
-            leftover_prefix += f"p{len(row["Build"])}"
-    else:
-        if row["Leftover"] == "TILJSZO":
-            # is just 1st pc
-            leftover_prefix = "*p7"
-        else:
-            leftover_prefix = f"[{row["Leftover"]}]"
-            if len(row["Build"]) + 1 >= len(row["Leftover"]):
-                # exactly uses either one less or same number of pieces in leftover
-                leftover_prefix += "!"
-            else:
-                # only need one more than number of pieces in build
-                leftover_prefix = f"[{row["Leftover"]}]p{len(row["Build"]) + 1}"
-
-
-    pieces_used: str = ""
+    build_length: int = 0
+    pieces_used: str
+    pieces_optional: str
+    pieces_required: Counter[str] = Counter(row["Build"].split(BUILDDELIMITOR)[0])
+    pieces_total: Counter[str] = Counter()
     for build in row["Build"].split(BUILDDELIMITOR):
         build_counter = Counter(build)
 
         # other pieces used in the setup
-        pieces_used += "".join((build_counter - leftover_counter).elements())
+        pieces_required &= build_counter
+        pieces_total |= build_counter
+
+        if build_length < len(build):
+            build_length = len(build)
+
+    pieces_used = sort_queue("".join(pieces_total - leftover_counter))
+    pieces_optional = sort_queue("".join(pieces_total - pieces_required))
+
+    # TODO: optimize to add modifer for the build pieces
+    if duplicate[1] == 2:
+        leftover_prefix = f"{duplicate[0]},[{''.join(leftover_counter.keys())}]"
+    else:
+        if row["Leftover"] == "TILJSZO":
+            # is just 1st pc
+            leftover_prefix = "*"
+        else:
+            leftover_prefix = f"[{row["Leftover"]}]"
+
+    if build_length + 1 >= len(row["Leftover"]):
+        if row["Leftover"] == "TILJSZO":
+            # for first use *p7 instead
+            leftover_prefix += "p7"
+        else:
+            # exactly uses either one less or same number of pieces in leftover
+            leftover_prefix += "!"
+    else:
+        # only need one more than number of pieces in build
+        leftover_prefix += f"p{build_length + 1}"
+
+    # modifer on first to include only pieces in build + 1
+    if row["Leftover"] == "TILJSZO" and pieces_required.total() + 1 < len(row["Leftover"]):
+        pieces_required_str: str = sort_queue("".join(pieces_required.elements()))
+        leftover_prefix += f"{{{pieces_required_str}=1}}"
+    if pieces_optional:
+        # any optional pieces
+        max_num_optional: int = build_length - pieces_required.total()
+        leftover_prefix += f"{{[[{pieces_optional}]={max_num_optional}}}"
 
     cover_dependence = leftover_prefix + (f",*p{len(pieces_used) + 1}{{{pieces_used}=1}}" if pieces_used else "")
 
     return cover_dependence
 
-def generate_pieces(row: dict) -> str:
+def generate_pieces(row: dict, skip_oqb: bool = True) -> str:
     '''
     Generate a default pieces for the row
 
@@ -284,18 +319,16 @@ def fill_columns(db: list[dict], print_disprepancy: bool = True) -> None:
             raise ValueError(f"Required fields 'Leftover' and 'Setup' are missing in {row}")
 
         # fill build
-        update(row, "Build", 
-               lambda: generate_build(row),
-               lambda old, new: new != old.split(BUILDDELIMITOR)[0])
+        update(row, "Build", lambda: generate_build(row))
 
         # fill id
-        update(row, "ID", lambda: generate_id(row))
+        # update(row, "ID", lambda: generate_id(row))
 
         # cover dependence based on leftover and build
         update(row, "Cover Dependence", lambda: generate_cover_dependence(row))
 
         # pieces based on leftover and build
-        update(row, "Pieces", lambda: generate_pieces(row))
+        # update(row, "Pieces", lambda: generate_pieces(row))
 
     
 if __name__ == "__main__":
@@ -303,7 +336,7 @@ if __name__ == "__main__":
     from utils.fileReader import openFile
     import csv
 
-    db = openFile(FILENAMES[1])
+    db = openFile(FILENAMES[2])
 
     fill_columns(db)
 
