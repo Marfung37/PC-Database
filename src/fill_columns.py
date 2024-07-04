@@ -133,6 +133,9 @@ def generate_cover_dependence(row: dict, skip_oqb: bool = True) -> str:
             ("Previous Setup" in row and row["Previous Setup"]) or \
             ("Next Setup" in row and row["Next Setup"])
         ):
+
+        if "Cover Dependence" in row:
+            return row["Cover Dependence"]
         return cover_dependence
 
     # count pieces in leftover
@@ -141,7 +144,6 @@ def generate_cover_dependence(row: dict, skip_oqb: bool = True) -> str:
     duplicate: tuple[str, int] = leftover_counter.most_common(1)[0]
 
     build_length: int = 0
-    pieces_used: str
     pieces_optional: str
     pieces_required: Counter[str] = Counter(row["Build"].split(BUILDDELIMITOR)[0])
     pieces_total: Counter[str] = Counter()
@@ -155,40 +157,63 @@ def generate_cover_dependence(row: dict, skip_oqb: bool = True) -> str:
         if build_length < len(build):
             build_length = len(build)
 
-    pieces_used = sort_queue("".join(pieces_total - leftover_counter))
-    pieces_optional = sort_queue("".join(pieces_total - pieces_required))
+    leftover_required = sort_queue("".join((leftover_counter & pieces_required).elements()))
+    next_bag_required = sort_queue("".join((pieces_required - Counter(leftover_required)).elements()))
+    pieces_optional = sort_queue("".join((pieces_total - pieces_required).elements()))
 
-    # TODO: optimize to add modifer for the build pieces
-    if duplicate[1] == 2:
-        leftover_prefix = f"{duplicate[0]},[{''.join(leftover_counter.keys())}]"
+    if len(leftover_counter.keys()) == 1:
+        # if the leftover is only one piece
+        leftover_prefix = "".join(leftover_counter.elements())
     else:
-        if row["Leftover"] == "TILJSZO":
-            # is just 1st pc
-            leftover_prefix = "*"
-        else:
-            leftover_prefix = f"[{row["Leftover"]}]"
+        if duplicate[1] == 2:
+            rest_of_leftover = ''.join(leftover_counter.keys())
+            # do the negation to reduce length
+            if len(rest_of_leftover) > 4:
+                rest_of_leftover = "^" + sort_queue(''.join(set(BAG) - set(rest_of_leftover)))
 
-    if build_length + 1 >= len(row["Leftover"]):
-        if row["Leftover"] == "TILJSZO":
-            # for first use *p7 instead
-            leftover_prefix += "p7"
+            leftover_prefix = duplicate[0] + f",[{rest_of_leftover}]"
         else:
-            # exactly uses either one less or same number of pieces in leftover
-            leftover_prefix += "!"
-    else:
-        # only need one more than number of pieces in build
-        leftover_prefix += f"p{build_length + 1}"
+            if row["Leftover"] == "TILJSZO":
+                # is just 1st pc
+                leftover_prefix = "*"
+            else:
+                leftover_prefix = f"[{row["Leftover"]}]"
 
-    # modifer on first to include only pieces in build + 1
-    if row["Leftover"] == "TILJSZO" and pieces_required.total() + 1 < len(row["Leftover"]):
-        pieces_required_str: str = sort_queue("".join(pieces_required.elements()))
-        leftover_prefix += f"{{{pieces_required_str}=1}}"
-    if pieces_optional:
-        # any optional pieces
+        if build_length + 1 >= len(row["Leftover"]):
+            if row["Leftover"] == "TILJSZO":
+                # for first use *p7 instead
+                leftover_prefix += "p7"
+            else:
+                # exactly uses either one less or same number of pieces in leftover
+                leftover_prefix += "!"
+        else:
+            if duplicate[1] == 2:
+                leftover_prefix += f"p{build_length}"
+            else:
+                # only need one more than number of pieces in build
+                leftover_prefix += f"p{build_length + 1}"
+
+        # include only pieces in build + 1
+        if len(leftover_required) + 1 < len(row["Leftover"]):
+            # remove duplicate piece
+            if duplicate[1] == 2 and duplicate[0] in leftover_required:
+                leftover_required = sort_queue("".join((Counter(leftover_required) - Counter(duplicate[0])).elements()))
+
+            leftover_prefix += f"{{{leftover_required}=1}}"
+
+    cover_dependence = leftover_prefix
+
+    if next_bag_required:
         max_num_optional: int = build_length - pieces_required.total()
-        leftover_prefix += f"{{[[{pieces_optional}]={max_num_optional}}}"
+        cover_dependence += f",*p{len(next_bag_required) + max_num_optional + 1}" + "{"
+        if pieces_optional:
+              cover_dependence += f"{len(next_bag_required) + 1}:"
+        cover_dependence += f"{next_bag_required}=1"
 
-    cover_dependence = leftover_prefix + (f",*p{len(pieces_used) + 1}{{{pieces_used}=1}}" if pieces_used else "")
+        if pieces_optional:
+            # any optional pieces
+            cover_dependence += f"||{next_bag_required}[{pieces_optional}]={max_num_optional}"
+        cover_dependence += "}"
 
     return cover_dependence
 
@@ -203,6 +228,16 @@ def generate_pieces(row: dict, skip_oqb: bool = True) -> str:
     Parameters:
         row (dict): row in database
     '''
+
+    # skip if it a oqb setup
+    if skip_oqb and \
+        (
+            ("Previous Setup" in row and row["Previous Setup"]) or \
+            ("Next Setup" in row and row["Next Setup"])
+        ):
+        if "Pieces" in row:
+            return row["Pieces"]
+        return ""
 
     # check if enough pieces to solve and not special case of 7th pc and able to know last piece not seen
     special_case: bool = False
@@ -336,7 +371,7 @@ if __name__ == "__main__":
     from utils.fileReader import openFile
     import csv
 
-    db = openFile(FILENAMES[2])
+    db = openFile(FILENAMES[8])
 
     fill_columns(db)
 
