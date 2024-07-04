@@ -1,30 +1,48 @@
 # Various functions representing useful calculations
 
-def PCNUM2LONUM(pcNum: int) -> int:
+def PCNUM2LONUM(pc_num: int) -> int:
     '''
     Convert a given pc number to the length of leftover
 
     Parameters:
-        pcNum(int): a pc number in range 1-9
+        pc_num(int): a pc number in range 1-9
 
     Return:
         int: a length of the leftover in range 1-7
     '''
     
-    return ((pcNum * 4) + 2) % 7 + 1
+    return ((pc_num * 4) + 2) % 7 + 1
 
-def LONUM2PCNUM(leftoverNum: int) -> int:
+def LONUM2PCNUM(leftover_num: int) -> int:
     '''
     Convert a given length of leftover to pc number
     
     Parameters:
-        leftoverNum(int): length of the leftover in range 1-7
+        leftover_num(int): length of the leftover in range 1-7
 
     Return:
         int: a pc number in range 1-7
     '''
 
-    return (leftoverNum * 2) % 7 + 1
+    return (leftover_num * 2) % 7 + 1
+
+def LONUM2BAGCOMP(leftover_num: int) -> list[int]:
+    '''
+    Generate the bag composition of the pc to 11 pieces
+
+    Parameters:
+        leftover_num(int): length of the leftovere in range 1-7
+
+    Return:
+        list[int]: number of pieces for each bag in the pc
+    '''
+
+    bag_comp: list[int] = [leftover_num]
+
+    while sum(bag_comp) < 11:
+        bag_comp.append(min(11 - sum(bag_comp), 7))
+    
+    return bag_comp
 
 def PCNUM(pieces: int, minos: int = 0) -> int:
     '''
@@ -56,4 +74,4 @@ def PCNUM(pieces: int, minos: int = 0) -> int:
 
 if __name__ == "__main__":
     print(PCNUM2LONUM(1))
-    print(LONUM2PCNUM(7))
+    print(LONUM2BAGCOMP(7))

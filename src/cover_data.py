@@ -186,7 +186,7 @@ if __name__ == "__main__":
     from utils.fileReader import openFile
     import csv
 
-    for i in range(1, 9):
+    for i in range(4, 5):
         db = openFile(FILENAMES[i])
 
         db = get_cover_data(db, overwrite=True)

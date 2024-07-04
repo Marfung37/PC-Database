@@ -1,12 +1,16 @@
 # Fill out the rest of the columns and verify columns are reasonable
 
-from utils.constants import FILENAMES, BUILDDELIMITOR
+from utils.constants import FILENAMES, BUILDDELIMITOR, PIECESDELIMITOR
 from utils.fileReader import queryWhere
-from utils.formulas import LONUM2PCNUM
+from utils.formulas import LONUM2PCNUM, LONUM2BAGCOMP
 from utils.queue_utils import BAG, PIECEVALS, sort_queue
 from utils.fumen_utils import get_pieces
 from collections import Counter
 import re
+
+IDLEN = 10
+NUMPIECESINPC = 10
+SEE = 7
 
 def generate_id(row: dict) -> str:
     '''
@@ -49,10 +53,11 @@ def generate_id(row: dict) -> str:
 
     if duplicates[0][1] > 2: # duplicated more than 2
         raise ValueError(f"Leftover has {duplicates[0][1]} '{duplicates[0][0]}' but there can only be at most 2 of a piece in {row}")
-    if duplicates[1][1] > 1: # more than 1 duplicates
+    if len(duplicates) == 2 and duplicates[1][1] > 1: # more than 1 duplicates
         raise ValueError(f"Leftover has '{duplicates[0][0]}' and '{duplicates[1][0]}' duplicated but only one piece can be duplicated in {row}")
 
-    duplicate_piece: str = bin(0 if duplicates[0][1] == 1 else 8 - PIECEVALS[duplicates[0][0]])[2:]
+    # TODO: Issue as not matching with other calculated IDs
+    duplicate_piece: str = bin(0 if duplicates[0][1] == 1 else 8 - PIECEVALS[duplicates[0][0]])[2:].zfill(3)
     
     # existance of pieces for sorting
     piece_existance: str = "".join(('1' if piece in leftover else '0' for piece in BAG))
@@ -69,8 +74,9 @@ def generate_id(row: dict) -> str:
 
     # 1 + 3 + 3 + 7 + 4 + 14 + 8
     binary_id = first_bit + pc_num + duplicate_piece + piece_existance + build_length + piece_counts_binary + unique_id
+    hex_id = '%.*X' % (IDLEN, int(binary_id, 2))
 
-    return binary_id
+    return hex_id
 
 def generate_build(row: dict) -> str:
     '''
@@ -119,12 +125,26 @@ def generate_cover_dependence(row: dict) -> str:
     duplicate: tuple[str, int] = leftover_counter.most_common(1)[0]
 
     if duplicate[1] == 2:
-        leftover_prefix = f"{duplicate[0]},[{''.join(leftover_counter.keys())}]!"
+        leftover_prefix = f"{duplicate[0]},[{''.join(leftover_counter.keys())}]"
+        if len(row["Build"]) + 1 >= len(row["Leftover"]):
+            # exactly uses either one less or same number of pieces in leftover
+            leftover_prefix += "!"
+        else:
+            # only need one more than number of pieces in build
+            leftover_prefix += f"p{len(row["Build"])}"
     else:
         if row["Leftover"] == "TILJSZO":
+            # is just 1st pc
             leftover_prefix = "*p7"
         else:
-            leftover_prefix = f"[{row["Leftover"]}]!"
+            leftover_prefix = f"[{row["Leftover"]}]"
+            if len(row["Build"]) + 1 >= len(row["Leftover"]):
+                # exactly uses either one less or same number of pieces in leftover
+                leftover_prefix += "!"
+            else:
+                # only need one more than number of pieces in build
+                leftover_prefix = f"[{row["Leftover"]}]p{len(row["Build"]) + 1}"
+
 
     pieces_used: str = ""
     for build in row["Build"].split(BUILDDELIMITOR):
@@ -133,9 +153,102 @@ def generate_cover_dependence(row: dict) -> str:
         # other pieces used in the setup
         pieces_used += "".join((build_counter - leftover_counter).elements())
 
-    cover_dependence = leftover_prefix + f",*p{len(pieces_used) + 1}{{{pieces_used}=1}}"
+    cover_dependence = leftover_prefix + (f",*p{len(pieces_used) + 1}{{{pieces_used}=1}}" if pieces_used else "")
 
     return cover_dependence
+
+def generate_pieces(row: dict) -> str:
+    '''
+    Generate a default pieces for the row
+
+    Expected Filled:
+        Leftover
+        Build
+
+    Parameters:
+        row (dict): row in database
+    '''
+
+    # check if enough pieces to solve and not special case of 7th pc and able to know last piece not seen
+    special_case: bool = False
+    if len(row["Build"]) + SEE < NUMPIECESINPC:
+        special_case = LONUM2PCNUM(len(row["Leftover"])) == 7 and len(row["Build"]) + SEE == NUMPIECESINPC - 1
+        if not special_case:
+            return "NULL"
+
+    pieces: list[str] = []
+
+    bag_comp: list[int] = LONUM2BAGCOMP(len(row["Leftover"]))
+    leftover_counter = Counter(row["Leftover"])
+
+    for build in row["Build"].split(BUILDDELIMITOR):
+        build_counter = Counter(build)
+
+        # other pieces used in the setup
+        pieces_used: Counter[str] = build_counter
+        pieces_used.subtract(leftover_counter)
+
+        pieces_not_used: str = sort_queue("".join((-pieces_used).elements()))
+        pieces_used_str: str = sort_queue("".join((+pieces_used).elements()))
+
+        parts: list[str] = []
+
+        # pieces not used from leftover
+        if pieces_not_used:
+            # reduce length by doing listing pieces not in rather than in bag
+            if len(pieces_not_used) > 3:
+                leftover_pieces_used: str = sort_queue("".join(set(row["Leftover"]) - set(pieces_not_used)))
+                parts.append(f"[^{leftover_pieces_used}]!")
+            else:
+                if len(pieces_not_used) == 1:
+                    # just one piece
+                    parts.append(pieces_not_used)
+                else:
+                    parts.append(f"[{pieces_not_used}]!")
+
+        # pieces used from next bag
+        if pieces_used_str:
+            # reduce length by doing listing pieces in rather than not in bag
+            if len(pieces_used_str) > 3:
+                pieces_left: str = sort_queue("".join(set(BAG) - set(pieces_used_str)))
+                parts.append(f"[{pieces_left}]!")
+            else:
+                parts.append(f"[^{pieces_used_str}]!")
+        else:
+            # didn't use any of next bag
+            num_to_add = bag_comp[1] - (11 - len(row["Build"]) - SEE)
+
+            # other special case on 2nd
+            special_case = LONUM2PCNUM(len(row["Leftover"])) == 2 and len(row["Build"]) + SEE == NUMPIECESINPC
+            if special_case:
+                num_to_add += 1
+
+            if num_to_add == 0:
+                pass
+            elif num_to_add == 1:
+                parts.append("*")
+            else:
+                parts.append(f"*p{num_to_add}")
+
+        # if there's third bag in the pc
+        if len(bag_comp) > 2:
+            num_to_add = bag_comp[2] - (11 - len(row["Build"]) - SEE)
+            if special_case:
+                num_to_add += 1
+
+            # add necessary number of pieces left
+            if num_to_add < 0:
+                raise RuntimeError("Reach state where trying to fill pieces but not able to see enough pieces to solve")
+            elif num_to_add == 0:
+                pass
+            elif num_to_add == 1:
+                parts.append("*")
+            else:
+                parts.append(f"*p{num_to_add}")
+
+        pieces.append(",".join(parts))
+
+    return PIECESDELIMITOR.join(pieces)
 
 def fill_columns(db: list[dict], print_disprepancy: bool = True) -> None:
     '''
@@ -156,7 +269,12 @@ def fill_columns(db: list[dict], print_disprepancy: bool = True) -> None:
             new = func()
 
             if print_disprepancy and row[key] and cond(row[key], new):
-                print(f"Computed '{key}' differs '{row[key]}' -> '{new}' in {row}")
+                simplified_row: dict = {
+                    "ID": row["ID"],
+                    "Leftover": row["Leftover"],
+                    "Setup": row["Setup"],
+                }
+                print(f"Computed '{key}' differs '{row[key]}' -> '{new}' in {simplified_row}")
             else:
                 row[key] = new
 
@@ -176,13 +294,16 @@ def fill_columns(db: list[dict], print_disprepancy: bool = True) -> None:
         # cover dependence based on leftover and build
         update(row, "Cover Dependence", lambda: generate_cover_dependence(row))
 
+        # pieces based on leftover and build
+        update(row, "Pieces", lambda: generate_pieces(row))
+
     
 if __name__ == "__main__":
     from utils.constants import FILENAMES
     from utils.fileReader import openFile
     import csv
 
-    db = openFile("input/db.tsv")
+    db = openFile(FILENAMES[1])
 
     fill_columns(db)
 

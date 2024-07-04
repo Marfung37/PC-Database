@@ -169,6 +169,5 @@ if __name__ == "__main__":
     from utils.fileReader import openFile, queryWhere
 
     db = openFile(FILENAMES[6])
-    db = queryWhere(db, where="ID=6E197ABDFF")
 
     check_percents(db, threads=1)
