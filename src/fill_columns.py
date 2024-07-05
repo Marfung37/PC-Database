@@ -3,13 +3,15 @@
 from utils.constants import FILENAMES, BUILDDELIMITOR, PIECESDELIMITOR
 from utils.fileReader import queryWhere
 from utils.formulas import LONUM2PCNUM, LONUM2BAGCOMP
-from utils.queue_utils import BAG, PIECEVALS, sort_queue
-from utils.fumen_utils import get_pieces
+from utils.queue_utils import BAG, PIECEVALS, sort_queue, extended_pieces_equals
+from utils.fumen_utils import get_pieces, is_pc
 from collections import Counter
+from typing import Callable
 import re
 
 IDLEN = 10
 NUMPIECESINPC = 10
+HOLD = 1
 SEE = 7
 
 def generate_id(row: dict) -> str:
@@ -255,7 +257,7 @@ def generate_pieces(row: dict, skip_oqb: bool = True) -> str:
         build_counter = Counter(build)
 
         # other pieces used in the setup
-        pieces_used: Counter[str] = build_counter
+        pieces_used: Counter[str] = build_counter.copy()
         pieces_used.subtract(leftover_counter)
 
         pieces_not_used: str = sort_queue("".join((-pieces_used).elements()))
@@ -266,8 +268,8 @@ def generate_pieces(row: dict, skip_oqb: bool = True) -> str:
         # pieces not used from leftover
         if pieces_not_used:
             # reduce length by doing listing pieces not in rather than in bag
-            if len(pieces_not_used) > 3:
-                leftover_pieces_used: str = sort_queue("".join(set(row["Leftover"]) - set(pieces_not_used)))
+            if len(pieces_not_used) > 4:
+                leftover_pieces_used: str = sort_queue("".join(set(BAG) - set(pieces_not_used)))
                 parts.append(f"[^{leftover_pieces_used}]!")
             else:
                 if len(pieces_not_used) == 1:
@@ -276,17 +278,31 @@ def generate_pieces(row: dict, skip_oqb: bool = True) -> str:
                 else:
                     parts.append(f"[{pieces_not_used}]!")
 
+        if len(row["Leftover"]) > NUMPIECESINPC // 2 and \
+            build_counter.total() == NUMPIECESINPC // 2 and \
+            set(build_counter.keys()) == set("ILJO"):
+
+            # is it a 2l?
+            if is_pc(row["Setup"]):
+                # skip adding the adding next bag
+                pieces.append(",".join(parts))
+                continue
+
         # pieces used from next bag
         if pieces_used_str:
             # reduce length by doing listing pieces in rather than not in bag
             if len(pieces_used_str) > 3:
                 pieces_left: str = sort_queue("".join(set(BAG) - set(pieces_used_str)))
-                parts.append(f"[{pieces_left}]!")
+                if len(pieces_left) == 1:
+                    # just one piece
+                    parts.append(pieces_left)
+                else:
+                    parts.append(f"[{pieces_left}]!")
             else:
                 parts.append(f"[^{pieces_used_str}]!")
         else:
             # didn't use any of next bag
-            num_to_add = bag_comp[1] - (11 - len(row["Build"]) - SEE)
+            num_to_add = min(bag_comp[1] - (NUMPIECESINPC + HOLD - len(row["Build"]) - SEE - sum(bag_comp[2:])), bag_comp[1])
 
             # other special case on 2nd
             special_case = LONUM2PCNUM(len(row["Leftover"])) == 2 and len(row["Build"]) + SEE == NUMPIECESINPC
@@ -300,9 +316,19 @@ def generate_pieces(row: dict, skip_oqb: bool = True) -> str:
             else:
                 parts.append(f"*p{num_to_add}")
 
+        if build_counter.total() == NUMPIECESINPC // 2:
+            if set(build_counter.keys()) == set("ILJO"):
+                # is it a 2l?
+                if is_pc(row["Setup"]):
+                    # skip adding the adding next bag
+                    pieces.append(",".join(parts))
+                    continue
+
         # if there's third bag in the pc
         if len(bag_comp) > 2:
-            num_to_add = bag_comp[2] - (11 - len(row["Build"]) - SEE)
+            num_to_add = min(bag_comp[2] - (NUMPIECESINPC + HOLD - len(row["Build"]) - SEE), bag_comp[2])
+
+            # the special case on 7th
             if special_case:
                 num_to_add += 1
 
@@ -320,7 +346,7 @@ def generate_pieces(row: dict, skip_oqb: bool = True) -> str:
 
     return PIECESDELIMITOR.join(pieces)
 
-def fill_columns(db: list[dict], print_disprepancy: bool = True, overwrite: bool = False) -> None:
+def fill_columns(db: list[dict], print_disprepancy: bool = True, overwrite: bool = False, overwrite_equivalent: bool = True) -> None:
     '''
     Modify database data to fill out rest of default columns, excluding Leftover, Setup, Previous Setup, and Next Setup, which first two are required.
     If a column has already been filled out, no change will be made.
@@ -334,9 +360,13 @@ def fill_columns(db: list[dict], print_disprepancy: bool = True, overwrite: bool
         print_disprepancy (bool) - whether to print disprepancies (Build, Cover Data, Solve %, Solve Fraction)
     '''
 
-    def update(row: dict, key: str, func, cond = lambda old, new: new != old):
+    def update(row: dict, 
+               key: str, 
+               func: Callable[[dict], str], 
+               cond: Callable[[str, str], bool] = lambda old, new: new != old, 
+               equivalent: Callable[[str, str], bool] = lambda old, new: new == old):
         if print_disprepancy or not row[key]:
-            new = func()
+            new = func(row)
 
             if print_disprepancy and row[key] and cond(row[key], new):
                 simplified_row: dict = {
@@ -344,9 +374,11 @@ def fill_columns(db: list[dict], print_disprepancy: bool = True, overwrite: bool
                     "Leftover": row["Leftover"],
                     "Setup": row["Setup"],
                 }
-                print(f"Computed '{key}' differs '{row[key]}' -> '{new}' in {simplified_row}")
-                if overwrite:
+                print(f"Computed '{key}' differs '{row[key]}' -> '{new}' in {simplified_row}", end="")
+                if overwrite or (overwrite_equivalent and equivalent(row[key], new)):
+                    print(" overwritten", end="")
                     row[key] = new
+                print()
             else:
                 row[key] = new
 
@@ -356,33 +388,40 @@ def fill_columns(db: list[dict], print_disprepancy: bool = True, overwrite: bool
             raise ValueError(f"Required fields 'Leftover' and 'Setup' are missing in {row}")
 
         # fill build
-        update(row, "Build", lambda: generate_build(row))
+        update(row, "Build", generate_build)
 
         # fill id
         # update(row, "ID", lambda: generate_id(row))
 
+        if overwrite_equivalent:
+            equal_pieces = extended_pieces_equals
+        else:
+            equal_pieces = lambda x,y: x == y
+
         # cover dependence based on leftover and build
-        update(row, "Cover Dependence", lambda: generate_cover_dependence(row))
+        update(row, "Cover Dependence", generate_cover_dependence, equivalent=equal_pieces)
 
         # pieces based on leftover and build
-        # update(row, "Pieces", lambda: generate_pieces(row))
+        update(row, "Pieces", generate_pieces, equivalent=equal_pieces)
     
 if __name__ == "__main__":
     from utils.constants import FILENAMES
     from utils.fileReader import openFile
     import csv
 
-    db = openFile(FILENAMES[7])
+    for i in range(1, 9):
+        db = openFile(FILENAMES[i])
 
-    fill_columns(db, overwrite=True)
+        fill_columns(db, overwrite_equivalent=True)
 
-    outfile = open("output/filled_columns.tsv", "w")
-
-    fieldnames = db[0].keys()
-    writer = csv.DictWriter(outfile, fieldnames=fieldnames, delimiter='\t')
-
-    writer.writeheader()
-    writer.writerows(db)
-
-    outfile.close()
+    # outfile = open("output/filled_columns.tsv", "w")
+    #
+    # fieldnames = db[0].keys()
+    # writer = csv.DictWriter(outfile, fieldnames=fieldnames, delimiter='\t')
+    #
+    # writer.writeheader()
+    # writer.writerows(db)
+    #
+    # outfile.close()
+    #
 

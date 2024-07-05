@@ -135,6 +135,10 @@ def extended_pieces_equals(pattern1: str, pattern2: str, equals: Callable[[str, 
         bool: whether the two patterns are equal
     '''
 
+    # if same pattern must be same
+    if pattern1 == pattern2:
+        return True
+
     # if coming from the database, could separated by colons
     pattern1_split = split_extended_pieces(pattern1)
     pattern2_split = split_extended_pieces(pattern2)
@@ -143,6 +147,9 @@ def extended_pieces_equals(pattern1: str, pattern2: str, equals: Callable[[str, 
         # compute the two queues
         queues1 = extendPieces(pattern1_part)
         queues2 = extendPieces(pattern2_part)
+
+        if len(queues1) != len(queues2):
+            return False
 
         # compare each queue one by one
         for q1, q2 in zip(queues1, queues2):
@@ -211,3 +218,5 @@ def extended_pieces_startswith(pattern_short: str, pattern_long: str) -> bool:
                 return False
 
     return True
+
+
