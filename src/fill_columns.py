@@ -84,7 +84,10 @@ def generate_id(row: dict, input_db: list[dict]) -> str:
     # find the correct unique id
     found_unique_ids: list[int]
 
-    input_filtered_db: list[dict] = queryWhere(input_db, where=f"ID<>")
+    input_db_copy: list[dict] = input_db[:]
+    sort_db(input_db_copy)
+
+    input_filtered_db: list[dict] = queryWhere(input_db_copy, where=f"ID<>")
     input_filtered_db = queryWhere(input_filtered_db, where=f"ID<={hex_id}")
     input_filtered_db = queryWhere(input_filtered_db, where=f"ID>={hex_id[:8] + "00"}")
 
@@ -406,31 +409,34 @@ def fill_columns(db: list[dict], print_disprepancy: bool = True, overwrite: bool
         if not (row["Leftover"] and row["Setup"]):
             raise ValueError(f"Required fields 'Leftover' and 'Setup' are missing in {row}")
 
+        # sort the leftover
+        row["Leftover"] = sort_queue(row["Leftover"])
+
         # fill build
         update(row, "Build", generate_build)
 
         # fill id
         update(row, "ID", lambda x: generate_id(x, db))
 
-        # if overwrite_equivalent:
-        #     equal_pieces = extended_pieces_equals
-        # else:
-        #     equal_pieces = lambda x,y: x == y
+        if overwrite_equivalent:
+            equal_pieces = extended_pieces_equals
+        else:
+            equal_pieces = lambda x,y: x == y
 
         # cover dependence based on leftover and build
-        # update(row, "Cover Dependence", generate_cover_dependence, equivalent=equal_pieces)
+        update(row, "Cover Dependence", generate_cover_dependence, equivalent=equal_pieces)
 
         # pieces based on leftover and build
-        # update(row, "Pieces", generate_pieces, equivalent=equal_pieces)
+        update(row, "Pieces", generate_pieces, equivalent=equal_pieces)
     
 if __name__ == "__main__":
     from utils.constants import FILENAMES
     from utils.fileReader import openFile
     import csv
 
-    db = openFile(FILENAMES[8])
+    db = openFile("input/db.tsv")
 
-    fill_columns(db, overwrite_equivalent=True)
+    fill_columns(db, overwrite=True)
 
     outfile = open("output/filled_columns.tsv", "w")
     

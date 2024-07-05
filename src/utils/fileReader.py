@@ -212,8 +212,8 @@ def getMatchingRange(text: str,
         startIndex = binarySearch(text, db, column_name, dir="right", compare=compare) + 1
 
     elif op == "=":
-        startIndex = binarySearch(text, db, column_name, dir="left", compare=compare)
-        endIndex = binarySearch(text, db, column_name, dir="right", compare=compare) + 1
+        startIndex = binarySearch(text, db, column_name, dir="right", compare=compare)
+        endIndex = binarySearch(text, db, column_name, dir="left", compare=compare) + 1
 
     # edge case for <> which isn't just a start and end
     if op == "<>":
