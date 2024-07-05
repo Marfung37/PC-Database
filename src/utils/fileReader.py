@@ -132,12 +132,10 @@ def binarySearch(text: str,
         else:
             low = mid + 1
 
-    # final check if the text was found
-    if equals(text, db[low][column_name]):
-        return low
-
     # not found
-    return -1
+    if dir == "left":
+        return low
+    return high
 
 def linearSearch(text: str, 
                  db: list[dict],
@@ -201,12 +199,12 @@ def getMatchingRange(text: str,
    
     # do the simple operators to handle
     startIndex = 0
-    endIndex= len(db)
+    endIndex = len(db)
 
     if op == "<=":
-        endIndex = binarySearch(text, db, column_name, dir="right", compare=compare) + 1
+        endIndex = binarySearch(text, db, column_name, dir="left", compare=compare) + 1
     elif op == ">=":
-        startIndex = binarySearch(text, db, column_name, dir="left", compare=compare)
+        startIndex = binarySearch(text, db, column_name, dir="right", compare=compare)
 
     elif op == "<":
         endIndex = binarySearch(text, db, column_name, dir="left", compare=compare)

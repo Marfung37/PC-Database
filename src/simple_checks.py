@@ -1,10 +1,9 @@
 # some basic checks
 
 from utils.fileReader import queryWhere
-from utils.queue_utils import extended_pieces_equals, extended_pieces_startswith
-from utils.fumen_utils import permutated_equals
-from utils.constants import PREVSETUPDELIMITOR, NEXTSETUPDELIMITOR
-from fill_columns import generate_build
+from utils.queue_utils import extended_pieces_equals, extended_pieces_startswith, sort_queue
+from utils.fumen_utils import permutated_equals, get_pieces
+from utils.constants import PREVSETUPDELIMITOR, NEXTSETUPDELIMITOR, BUILDDELIMITOR
 
 def is_sorted(db: list[dict]) -> bool:
     '''
@@ -24,6 +23,16 @@ def is_sorted(db: list[dict]) -> bool:
             return False
 
     return True
+
+def sort_db(db: list[dict]) -> None:
+    '''
+    Sort the database
+
+    Parameter:
+        db (list)
+    '''
+
+    db.sort(key=lambda x: x["ID"])
 
 def duplicate_rows(db: list[dict], check_pieces: bool = False) -> list[list[str]]:
     '''
@@ -97,6 +106,33 @@ def duplicate_rows(db: list[dict], check_pieces: bool = False) -> list[list[str]
                     result.append([row1["ID"], row2["ID"]])
 
     return result
+
+def generate_build(row: dict) -> str:
+    '''
+    Compute the pieces in the setup
+
+    Expected Filled:
+        Setup
+
+    Parameters:
+        row (dict): row in database
+
+    Return:
+        pieces in the setup
+    '''
+
+    build: str
+
+    # get the pieces from the setup
+    pieces = get_pieces(row["Setup"])
+    build_lst = list(map(sort_queue, map("".join, map(str, pieces))))
+
+    if len(set(build_lst)) == 1:
+        build = build_lst[0]
+    else:
+        build = BUILDDELIMITOR.join(build_lst)
+
+    return build
 
 def assign_build(db: list[dict], print_error: bool = True, overwrite: bool = False) -> None:
     '''

@@ -1,10 +1,11 @@
 # Fill out the rest of the columns and verify columns are reasonable
 
 from utils.constants import FILENAMES, BUILDDELIMITOR, PIECESDELIMITOR
-from utils.fileReader import queryWhere
+from utils.fileReader import queryWhere, openFile
 from utils.formulas import LONUM2PCNUM, LONUM2BAGCOMP
 from utils.queue_utils import BAG, PIECEVALS, sort_queue, extended_pieces_equals
-from utils.fumen_utils import get_pieces, is_pc
+from utils.fumen_utils import is_pc
+from simple_checks import duplicate_rows, generate_build, sort_db
 from collections import Counter
 from typing import Callable
 import re
@@ -14,7 +15,7 @@ NUMPIECESINPC = 10
 HOLD = 1
 SEE = 7
 
-def generate_id(row: dict) -> str:
+def generate_id(row: dict, input_db: list[dict]) -> str:
     '''
     Generate an id for a given row
 
@@ -43,12 +44,16 @@ def generate_id(row: dict) -> str:
     build_piece_counts = Counter(build)
 
     # PC number
-    pc_num: str = bin(LONUM2PCNUM(len(leftover)))[2:].zfill(3)
+    pc_num: int = LONUM2PCNUM(len(row["Leftover"]))
+    pc_num_bin: str = bin(pc_num)[2:].zfill(3)
 
     # edge case that I doubt will ever be used
     four_duplicate: bool = 4 in build_piece_counts.values()
     eigth_pc: bool = pc_num == 1 and 2 in leftover_piece_counts.values()
     first_bit: str = '1' if four_duplicate or eigth_pc else '0'
+    if eigth_pc:
+        pc_num = 8
+        pc_num_bin = bin(0)[2:].zfill(3)
 
     # which piece is duplicated in leftover
     duplicates = leftover_piece_counts.most_common(2)
@@ -58,7 +63,7 @@ def generate_id(row: dict) -> str:
     if len(duplicates) == 2 and duplicates[1][1] > 1: # more than 1 duplicates
         raise ValueError(f"Leftover has '{duplicates[0][0]}' and '{duplicates[1][0]}' duplicated but only one piece can be duplicated in {row}")
 
-    duplicate_piece: str = bin(0 if duplicates[0][1] == 1 else 8 - PIECEVALS[duplicates[0][0]])[2:].zfill(3)
+    duplicate_piece: str = bin(0 if duplicates[0][1] == 1 else PIECEVALS[duplicates[0][0]])[2:].zfill(3)
     
     # existance of pieces for sorting
     piece_existance: str = "".join(('0' if piece in leftover else '1' for piece in BAG))
@@ -69,42 +74,56 @@ def generate_id(row: dict) -> str:
     # get piece counts
     piece_counts_binary = "".join((bin(int(abs(build_piece_counts[piece] - 3.5) - 0.5))[2:].zfill(2) if piece in build_piece_counts else "11" for piece in BAG))
 
-    # unique id
-    # TODO: get the unique id for this setup
+    # temp unique id
     unique_id: str = '1' * 8
 
     # 1 + 3 + 3 + 7 + 4 + 14 + 8
-    binary_id = first_bit + pc_num + duplicate_piece + piece_existance + build_length + piece_counts_binary + unique_id
+    binary_id = first_bit + pc_num_bin + duplicate_piece + piece_existance + build_length + piece_counts_binary + unique_id
     hex_id = '%.*X' % (IDLEN, int(binary_id, 2))
 
+    # find the correct unique id
+    found_unique_ids: list[int]
+
+    input_filtered_db: list[dict] = queryWhere(input_db, where=f"ID<>")
+    input_filtered_db = queryWhere(input_filtered_db, where=f"ID<={hex_id}")
+    input_filtered_db = queryWhere(input_filtered_db, where=f"ID>={hex_id[:8] + "00"}")
+
+    found_unique_ids = [int(x["ID"][-2:],16) for x in input_filtered_db]
+
+    known_db: list[dict] = openFile(FILENAMES[pc_num])
+    filtered_db: list[dict] = queryWhere(known_db, where=f"ID<={hex_id}")
+    filtered_db = queryWhere(filtered_db, where=f"ID>={hex_id[:8] + "00"}")
+
+    found_unique_ids += [int(x["ID"][-2:], 16) for x in filtered_db]
+
+    # non empty, if empty is new id
+    if found_unique_ids:
+        old_id: str = row["ID"]
+
+        # get a new id that it could be
+        unique_id = '%.*X' % (2, min(found_unique_ids) - 1)
+        hex_id = hex_id[:8] + unique_id
+
+        row["ID"] = hex_id
+
+
+        # check with duplicate pieces from simple checks if duplicate row (ie should be itself)
+        part_db: list[dict] = [row] + filtered_db
+        sort_db(part_db)
+
+        # run to check for duplicate rows
+        collisions: list[list[str]] = duplicate_rows(part_db)
+
+        # reset the id
+        row["ID"] = old_id
+        if collisions:
+            # multiple collisions
+            if len(collisions) > 1 or hex_id not in collisions[0]:
+                raise RuntimeError(f"Database has duplicate rows in pc {pc_num}")
+
+            hex_id = collisions[0][1 - collisions[0].index(hex_id)] # other id that isn't itself
+
     return hex_id
-
-def generate_build(row: dict) -> str:
-    '''
-    Compute the pieces in the setup
-
-    Expected Filled:
-        Setup
-
-    Parameters:
-        row (dict): row in database
-
-    Return:
-        pieces in the setup
-    '''
-
-    build: str
-
-    # get the pieces from the setup
-    pieces = get_pieces(row["Setup"])
-    build_lst = list(map(sort_queue, map("".join, map(str, pieces))))
-
-    if len(set(build_lst)) == 1:
-        build = build_lst[0]
-    else:
-        build = BUILDDELIMITOR.join(build_lst)
-
-    return build
 
 def generate_cover_dependence(row: dict, skip_oqb: bool = True) -> str:
     '''
@@ -225,6 +244,7 @@ def generate_pieces(row: dict, skip_oqb: bool = True) -> str:
     Expected Filled:
         Leftover
         Build
+        Setup (only for checking if 2l)
 
     Parameters:
         row (dict): row in database
@@ -390,7 +410,7 @@ def fill_columns(db: list[dict], print_disprepancy: bool = True, overwrite: bool
         update(row, "Build", generate_build)
 
         # fill id
-        update(row, "ID", generate_id)
+        update(row, "ID", lambda x: generate_id(x, db))
 
         # if overwrite_equivalent:
         #     equal_pieces = extended_pieces_equals
@@ -408,7 +428,7 @@ if __name__ == "__main__":
     from utils.fileReader import openFile
     import csv
 
-    db = openFile(FILENAMES[1])
+    db = openFile(FILENAMES[8])
 
     fill_columns(db, overwrite_equivalent=True)
 
