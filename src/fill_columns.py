@@ -58,17 +58,16 @@ def generate_id(row: dict) -> str:
     if len(duplicates) == 2 and duplicates[1][1] > 1: # more than 1 duplicates
         raise ValueError(f"Leftover has '{duplicates[0][0]}' and '{duplicates[1][0]}' duplicated but only one piece can be duplicated in {row}")
 
-    # TODO: Issue as not matching with other calculated IDs
     duplicate_piece: str = bin(0 if duplicates[0][1] == 1 else 8 - PIECEVALS[duplicates[0][0]])[2:].zfill(3)
     
     # existance of pieces for sorting
-    piece_existance: str = "".join(('1' if piece in leftover else '0' for piece in BAG))
+    piece_existance: str = "".join(('0' if piece in leftover else '1' for piece in BAG))
 
     # length of build
-    build_length: str = bin(len(build))[2:].zfill(4)
+    build_length: str = bin(NUMPIECESINPC - len(build))[2:].zfill(4)
 
     # get piece counts
-    piece_counts_binary = "".join((bin(build_piece_counts[piece])[2:].zfill(2) if piece in build_piece_counts else "00" for piece in BAG))
+    piece_counts_binary = "".join((bin(int(abs(build_piece_counts[piece] - 3.5) - 0.5))[2:].zfill(2) if piece in build_piece_counts else "11" for piece in BAG))
 
     # unique id
     # TODO: get the unique id for this setup
@@ -391,37 +390,36 @@ def fill_columns(db: list[dict], print_disprepancy: bool = True, overwrite: bool
         update(row, "Build", generate_build)
 
         # fill id
-        # update(row, "ID", lambda: generate_id(row))
+        update(row, "ID", generate_id)
 
-        if overwrite_equivalent:
-            equal_pieces = extended_pieces_equals
-        else:
-            equal_pieces = lambda x,y: x == y
+        # if overwrite_equivalent:
+        #     equal_pieces = extended_pieces_equals
+        # else:
+        #     equal_pieces = lambda x,y: x == y
 
         # cover dependence based on leftover and build
-        update(row, "Cover Dependence", generate_cover_dependence, equivalent=equal_pieces)
+        # update(row, "Cover Dependence", generate_cover_dependence, equivalent=equal_pieces)
 
         # pieces based on leftover and build
-        update(row, "Pieces", generate_pieces, equivalent=equal_pieces)
+        # update(row, "Pieces", generate_pieces, equivalent=equal_pieces)
     
 if __name__ == "__main__":
     from utils.constants import FILENAMES
     from utils.fileReader import openFile
     import csv
 
-    for i in range(1, 9):
-        db = openFile(FILENAMES[i])
+    db = openFile(FILENAMES[1])
 
-        fill_columns(db, overwrite_equivalent=True)
+    fill_columns(db, overwrite_equivalent=True)
 
-    # outfile = open("output/filled_columns.tsv", "w")
-    #
-    # fieldnames = db[0].keys()
-    # writer = csv.DictWriter(outfile, fieldnames=fieldnames, delimiter='\t')
-    #
-    # writer.writeheader()
-    # writer.writerows(db)
-    #
-    # outfile.close()
-    #
+    outfile = open("output/filled_columns.tsv", "w")
+    
+    fieldnames = db[0].keys()
+    writer = csv.DictWriter(outfile, fieldnames=fieldnames, delimiter='\t')
+    
+    writer.writeheader()
+    writer.writerows(db)
+    
+    outfile.close()
+    
 
