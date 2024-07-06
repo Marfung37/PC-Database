@@ -153,7 +153,12 @@ def displaySetups(setups: list[dict]) -> int:
         lines = "\n".join(lines)
 
         print(lines)
-        print(f"{num}. {setup['Solve %']}")
+        print(f"{num}. {setup['Solve %']}", end="")
+
+        # TODO: generalize this for all pc's
+        if "Good Save %" in setup:
+            print(f"\t{setup['Good Save %']}", end="")
+        print()
         print()
 
     if null_setup:
