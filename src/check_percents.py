@@ -7,7 +7,7 @@ from utils.queue_utils import split_extended_pieces
 from utils.pieces import extendPieces
 from utils.constants import ROOT, SFINDERPATH, KICKPATH
 
-def calculate_percent_in_range(db: list[dict], line_start: int, line_end: int, thread_num: int = 1):
+def calculate_percent_in_range(db: list[dict], line_start: int, line_end: int, thread_num: int = 1, only_empty: bool = False, overwrite: bool = False):
     '''
     Calculate percent of setups in a range of the rows of the database and update database with percentages
 
@@ -26,6 +26,9 @@ def calculate_percent_in_range(db: list[dict], line_start: int, line_end: int, t
         setup = line["Setup"]
         pieces = line["Pieces"]
         percent = line["Solve %"]
+        
+        if only_empty and percent:
+            continue
 
         # check if 2l pc
         clear_line = 4
@@ -119,14 +122,16 @@ def calculate_percent_in_range(db: list[dict], line_start: int, line_end: int, t
             # warn the user this is the case
             print(f'{line_num}: percent is calculated to be {calc_percent} instead of {percent}')
             print(f"extendedPieces '{';'.join(pieces)}' > input/patterns.txt; " + f"java -jar sfinder.jar percent -t {setup} -d 180")
-        else:
+
+        if overwrite:
             # write into the db
             line["Solve %"] = calc_percent
-            line["Fraction"] = fraction
+            line["Solve Fraction"] = fraction
+
     
     print(f'Thread {thread_num} finished')
     
-def check_percents(db: list[dict], threads: int = 4) -> list[dict]:
+def check_percents(db: list[dict], start_line: int = 1, threads: int = 4, overwrite: bool = False, only_empty: bool = False) -> None:
     '''
     Calculate the percents for all setups in db
 
@@ -139,7 +144,7 @@ def check_percents(db: list[dict], threads: int = 4) -> list[dict]:
     '''
 
     # separate the number of lines by the threads
-    thread_lines = len(db) // threads
+    thread_lines = (len(db) - start_line) // threads
 
     # locks for each thread
     thread_locks = []
@@ -147,27 +152,36 @@ def check_percents(db: list[dict], threads: int = 4) -> list[dict]:
     # setup the threads
     for index in range(1, threads):
         # calculate the line to start with
-        thread_start = index * thread_lines
-        thread = threading.Thread(target=calculate_percent_in_range, args=(db, thread_start, thread_start + thread_lines, index))
+        thread_start = start_line + (index * thread_lines)
+        thread = threading.Thread(target=calculate_percent_in_range, args=(db, thread_start, thread_start + thread_lines, index, only_empty, overwrite))
 
         thread_locks.append(thread)
         thread.start()
 
     # main thread
-    thread_start = 0
-    calculate_percent_in_range(db, thread_start, thread_start + thread_lines, 0)
+    thread_start = start_line
+    calculate_percent_in_range(db, thread_start, thread_start + thread_lines, 0, only_empty, overwrite)
 
     # wait for other threads to finish
     for index, thread in enumerate(thread_locks):
         thread.join()
 
-    return db
-
 if __name__ == "__main__":
     import os
     from utils.constants import FILENAMES
     from utils.fileReader import openFile, queryWhere
+    import csv
 
-    db = openFile(FILENAMES[6])
+    db = openFile("output/cover_data.tsv")
 
-    check_percents(db, threads=1)
+    check_percents(db, threads=1, overwrite=True, only_empty=True)
+
+    outfile = open(f"output/check_percents.tsv", "w")
+
+    fieldnames = db[0].keys()
+    writer = csv.DictWriter(outfile, fieldnames=fieldnames, delimiter='\t')
+
+    writer.writeheader()
+    writer.writerows(db)
+
+    outfile.close()

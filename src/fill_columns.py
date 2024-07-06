@@ -115,6 +115,7 @@ def generate_id(row: dict, input_db: list[dict]) -> str:
         sort_db(part_db)
 
         # run to check for duplicate rows
+        # TODO: still failing the collisions test
         collisions: list[list[str]] = duplicate_rows(part_db)
 
         # reset the id
@@ -428,15 +429,18 @@ def fill_columns(db: list[dict], print_disprepancy: bool = True, overwrite: bool
 
         # pieces based on leftover and build
         update(row, "Pieces", generate_pieces, equivalent=equal_pieces)
+
+    sort_db(db)
     
 if __name__ == "__main__":
     from utils.constants import FILENAMES
     from utils.fileReader import openFile
     import csv
 
-    db = openFile("input/db.tsv")
+    db = openFile("input/db7.tsv")
 
     fill_columns(db, overwrite=True)
+    sort_db(db)
 
     outfile = open("output/filled_columns.tsv", "w")
     

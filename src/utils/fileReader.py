@@ -3,11 +3,14 @@
 import re
 from typing import Callable
 from csv import DictReader
+from bisect import bisect_left, bisect_right
+from functools import cmp_to_key
+from typing import Any
 
-DEFAULT_COMPARE = lambda x, y: x < y
+DEFAULT_COMPARE = lambda x, y: (x > y) - (x < y)
 DEFAULT_EQUALS = lambda x, y: x == y
 
-def compareQueues(q1: str, q2: str) -> bool:
+def compareQueues(q1: str, q2: str) -> int:
     '''
     Determine if a queue is less than another queue following if duplicate follow TILJSZO, then TILJSZO, then longest
 
@@ -16,8 +19,9 @@ def compareQueues(q1: str, q2: str) -> bool:
         q2 (str): A tetris format queue
 
     Returns:
-        bool: Whether q1 is less than q2
-
+        -1 if q1 < q2
+        0 if q1 == q2
+        1 if q1 > q2
     '''
 
     # in the database length is lower precedence
@@ -47,95 +51,38 @@ def compareQueues(q1: str, q2: str) -> bool:
 
     # compare the duplicate pieces
     if pieceVals[dupPiece1] < pieceVals[dupPiece2]:
-        return True
+        return -1
     if pieceVals[dupPiece1] > pieceVals[dupPiece2]:
-        return False
+        return 1
 
     # Go through each piece from left to right
     for p1, p2 in zip(q1, q2):
 
         # if piece in q1 is less than piece in q2
         if pieceVals[p1] < pieceVals[p2]:
-            return True
+            return -1
 
         # if piece in q1 is greater than piece in q2
         elif pieceVals[p1] > pieceVals[p2]:
-            return False
+            return 1
 
         # otherwise same piece
 
     # comparing the lengths of the queues
     # a longer queue is less than a shorter queue
     if len(q1) > len(q2):
-        return True
+        return -1
     elif len(q1) < len(q2):
-        return False
+        return 1
 
     # exactly the same queues
-    return False
+    return 0
 
 # dict for column to the comparison function
 COL2COMPARE = {
     "ID": DEFAULT_COMPARE,
     "Leftover": compareQueues,
 }
-
-def binarySearch(text: str,
-                 db: list[dict],
-                 column_name: str, 
-                 dir: str = "left",
-                 compare: Callable[[str, str], bool] = DEFAULT_COMPARE, 
-                 equals: Callable[[str, str], bool] = DEFAULT_EQUALS, 
-                 ) -> int:
-    '''
-    Determine if text is within the list with binary search
-
-    Parameters:
-        text (str): string to find in the db
-        db (list): a list of rows in the format of a dictionary
-        column_name (str): name of the column to binary search
-        dir (str): either "left" or "right" to get left or right edge of range where text is found
-        compare (func): a compare functional obj that returns a boolean when comparing strings
-        equals (func): function to compare for linear search
-
-    Returns:
-        int: index where the text is found and -1 if not
-
-    '''
-
-    low = 0
-    high = len(db) - 1
-
-    while low < high:
-        mid = low + (high - low) // 2
-
-        if dir == "right":
-            mid += (high - low) % 2
-
-        # check if text was found already
-        if equals(text, db[mid][column_name]):
-            if dir == "left":
-                high = mid
-
-                if mid - 1 < 0 or text != db[mid - 1][column_name]:
-                    low = mid
-
-            else:
-                low = mid
-
-                if mid + 1 == len(db) or text != db[mid + 1][column_name]:
-                    high = mid
-
-        # check if less than
-        elif compare(text, db[mid][column_name]):
-            high = mid - 1
-        else:
-            low = mid + 1
-
-    # not found
-    if dir == "left":
-        return low
-    return high
 
 def linearSearch(text: str, 
                  db: list[dict],
@@ -180,7 +127,7 @@ def linearSearch(text: str,
 def getMatchingRange(text: str,
                      db: list[dict],
                      column_name: str,
-                     op: str, compare: Callable[[str, str], bool],
+                     op: str, compare: Callable[[Any, Any], int],
                      ) -> list[tuple[int, int]]:
     '''
     Get the ranges where text is satisfies by the operator in the list
@@ -201,24 +148,28 @@ def getMatchingRange(text: str,
     startIndex = 0
     endIndex = len(db)
 
+    key_func = lambda x: cmp_to_key(compare)(x[column_name])
+
     if op == "<=":
-        endIndex = binarySearch(text, db, column_name, dir="left", compare=compare) + 1
+        endIndex = bisect_right(db, cmp_to_key(compare)(text), key=key_func)
+
     elif op == ">=":
-        startIndex = binarySearch(text, db, column_name, dir="right", compare=compare)
+        startIndex = bisect_left(db, cmp_to_key(compare)(text), key=key_func)
 
     elif op == "<":
-        endIndex = binarySearch(text, db, column_name, dir="left", compare=compare)
+        endIndex = bisect_left(db, cmp_to_key(compare)(text), key=key_func)
+
     elif op == ">":
-        startIndex = binarySearch(text, db, column_name, dir="right", compare=compare) + 1
+        startIndex = bisect_right(db, cmp_to_key(compare)(text), key=key_func)
 
     elif op == "=":
-        startIndex = binarySearch(text, db, column_name, dir="right", compare=compare)
-        endIndex = binarySearch(text, db, column_name, dir="left", compare=compare) + 1
+        startIndex = bisect_left(db, cmp_to_key(compare)(text), key=key_func)
+        endIndex = bisect_right(db, cmp_to_key(compare)(text), key=key_func)
 
     # edge case for <> which isn't just a start and end
-    if op == "<>":
-        endIndex1 = binarySearch(text, db, column_name, dir="left", compare=compare)
-        startIndex2 = binarySearch(text, db, column_name, dir="right", compare=compare) + 1
+    elif op == "<>":
+        startIndex2 = bisect_right(db, cmp_to_key(compare)(text), key=key_func)
+        endIndex1 = bisect_left(db, cmp_to_key(compare)(text), key=key_func)
 
         return [(0, endIndex1), (startIndex2, len(db))]
 

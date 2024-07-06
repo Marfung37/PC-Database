@@ -186,17 +186,16 @@ if __name__ == "__main__":
     from utils.fileReader import openFile
     import csv
 
-    for i in range(1, 9):
-        db = openFile(FILENAMES[i])
+    db = openFile("output/filled_columns.tsv")
 
-        db = get_cover_data(db, overwrite=True)
+    db = get_cover_data(db, overwrite=True)
 
-        outfile = open(f"output/cover_data{i}.tsv", "w")
+    outfile = open(f"output/cover_data.tsv", "w")
 
-        fieldnames = db[0].keys()
-        writer = csv.DictWriter(outfile, fieldnames=fieldnames, delimiter='\t')
+    fieldnames = db[0].keys()
+    writer = csv.DictWriter(outfile, fieldnames=fieldnames, delimiter='\t')
 
-        writer.writeheader()
-        writer.writerows(db)
+    writer.writeheader()
+    writer.writerows(db)
 
-        outfile.close()
+    outfile.close()

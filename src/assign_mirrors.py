@@ -1,9 +1,10 @@
 # Check if the mirror column seems reasonable
 
-from utils.fileReader import queryWhere, binarySearch, COL2COMPARE
+from utils.fileReader import queryWhere
 from utils.fumen_utils import mirror_fumen, permutated_equals
 from utils.queue_utils import mirror_queue, mirror_pattern, \
                               extended_pieces_equals
+from bisect import bisect_left
 
 def get_mirror_setup(db: list[dict], row: dict, check_pieces: bool = False) -> dict:
     '''
@@ -88,7 +89,7 @@ def get_mirror_setup(db: list[dict], row: dict, check_pieces: bool = False) -> d
 def check_mirrors(db: list[dict], 
                   print_errors: bool = False, 
                   overwrite: bool = False
-                  ) -> list[dict]:
+                  ) -> None:
     '''
     Assign and check the ids for mirror of setups
 
@@ -144,12 +145,10 @@ def check_mirrors(db: list[dict],
             # the mirror id should be NULL in this case
             if row["Mirror"] != "NULL" and print_errors:
                 print(f"{row['ID']} should a mirror id of 'NULL'")
-
             continue
 
-
         # get the index of this mirror row
-        mirror_index = binarySearch(mirror_row["ID"], db, "ID", COL2COMPARE["ID"])
+        mirror_index = bisect_left(db, mirror_row["ID"], key=lambda x: x["ID"])
 
         # set this row and mirror to checked
         row_checked[row_index] = True
@@ -169,12 +168,22 @@ def check_mirrors(db: list[dict],
             print(f"{row['ID']} and {mirror_row['ID']} are mirrors but " \
                    "aren't noted as such in the database")
 
-    return db
-
 if __name__ == "__main__":
     from utils.constants import FILENAMES
     from utils.fileReader import openFile, queryWhere
+    import csv
+    from simple_checks import sort_db
 
-    db = openFile(FILENAMES[8])
+    db = openFile("output/check_percents.tsv")
 
-    check_mirrors(db, print_errors=True)
+    check_mirrors(db, overwrite=True, print_errors=True)
+
+    outfile = open(f"output/assign_mirrors.tsv", "w")
+
+    fieldnames = db[0].keys()
+    writer = csv.DictWriter(outfile, fieldnames=fieldnames, delimiter='\t')
+
+    writer.writeheader()
+    writer.writerows(db)
+
+    outfile.close()
