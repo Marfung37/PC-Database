@@ -9,6 +9,7 @@
 
   export let fumen: string;
   export let clipboard: boolean = true;
+  export let minHeight: number = -1;
 
   let loading: boolean = true;
   let error: string | null = null;
@@ -354,7 +355,7 @@
     var resultURLs = [];
 
     const pages = decoder.decode(fumen);
-    const height = getHeight(fumen) + 1;
+    const height = Math.max(getHeight(fumen) + 1, minHeight + 1);
 
     for (let page of pages) {
       let canvas = draw(page, height);
