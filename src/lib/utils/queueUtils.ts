@@ -1,7 +1,7 @@
 import type { Queue } from '$lib/types';
 import { BAG, PIECEVAL, mirrorPieces } from '$lib/constants';
 
-const queueRegex = new RegExp(`^[${BAG}]+$`);
+export const queueRegex = new RegExp(`^[${BAG}]+$`);
 
 export function isQueue(s: string): boolean {
   return queueRegex.test(s);

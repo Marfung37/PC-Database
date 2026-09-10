@@ -1,14 +1,16 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { resolve } from '$app/paths';
+  import { enhance } from '$app/forms';
   import { goto, invalidate } from '$app/navigation';
   import { m } from '$lib/paraglide/messages.js';
   import SetupMiniInfo from '$lib/components/SetupMiniInfo.svelte';
 
-  const { data } = $props();
+  const { data, form } = $props();
 
-  const setups = $derived(data.setups ?? []);
+  let setups = $derived(data.setups ?? []);
   const uniqueLeftovers = $derived(data.leftovers ?? []);
+  let hasMore = $derived(data.hasMore ?? false);
 
   const setupGroups = $derived([...Map.groupBy(setups, (setup) => setup.leftover)]);
 
@@ -104,5 +106,33 @@
         </div>
       </div>
     {/each}
+    {#if hasMore && setups.length > 0}
+      <form
+        method="POST"
+        action="?/loadMore"
+        use:enhance={() => {
+          return async ({ result }) => {
+            if (result.type === 'success') {
+              const data = result.data as {
+                setups: typeof setups;
+                hasMore: boolean;
+              };
+              setups = [...setups, ...data.setups];
+              hasMore = data.hasMore;
+            } else if (result.type === 'failure') {
+              console.error(result.data);
+            }
+          };
+        }}
+        class="w-full flex justify-center"
+      >
+        <input name="pc" value={pcNumber} type="hidden" />
+        <input name="leftover" value={leftover} type="hidden" />
+        <input name="cursor" value={setups[setups.length - 1].setup_id} type="hidden" />
+        <button type="submit" class="btn p-6 bg-info text-info-content hover:bg-info/70 text-lg"
+          >Load More...</button
+        >
+      </form>
+    {/if}
   </div>
 </div>
