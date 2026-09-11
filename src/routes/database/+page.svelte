@@ -6,7 +6,7 @@
   import { m } from '$lib/paraglide/messages.js';
   import SetupMiniInfo from '$lib/components/SetupMiniInfo.svelte';
 
-  const { data, form } = $props();
+  const { data } = $props();
 
   let setups = $derived(data.setups ?? []);
   const uniqueLeftovers = $derived(data.leftovers ?? []);

@@ -3,7 +3,13 @@ import type { Queue, SetupID } from '$lib/types';
 
 const PAGE_SIZE = 100;
 
-export async function getDatabaseSetups(supabase: App.Locals['supabase'], pc?: number, leftover?: Queue, cursor?: SetupID, limit: number = PAGE_SIZE) {
+export async function getDatabaseSetups(
+  supabase: App.Locals['supabase'],
+  pc?: number,
+  leftover?: Queue,
+  cursor?: SetupID,
+  limit: number = PAGE_SIZE
+) {
   let query = supabase
     .from('setups')
     .select('setup_id, pc, leftover, build, fumen, statistics!inner(solve_percent)')
@@ -17,14 +23,14 @@ export async function getDatabaseSetups(supabase: App.Locals['supabase'], pc?: n
     query = query.eq('leftover', leftover);
   }
   if (cursor) {
-    query = query.gt('setup_id', cursor)
+    query = query.gt('setup_id', cursor);
   }
   query = query.order('setup_id').limit(limit + 1);
 
   const { data, error } = await query;
 
   if (error) {
-    return { data: null, hasMore: false, error }
+    return { data: null, hasMore: false, error };
   }
 
   const hasMore = data.length == limit + 1;
@@ -41,5 +47,5 @@ export async function getDatabaseSetups(supabase: App.Locals['supabase'], pc?: n
     };
   });
 
-  return { data: cleanData, hasMore, error: null }
+  return { data: cleanData, hasMore, error: null };
 }

@@ -12,7 +12,6 @@ interface FilterOptions {
   leftover?: Queue;
 }
 
-
 export const load: PageServerLoad = async function ({ url, locals: { supabase }, depends }) {
   depends('setups');
 
@@ -55,7 +54,6 @@ export const load: PageServerLoad = async function ({ url, locals: { supabase },
   return { setups: data, hasMore, leftovers };
 };
 
-
 function normalizeParams(params: URLSearchParams): FilterOptions | null {
   const rawPC = params.get('pc');
   const rawLeftover = params.get('leftover');
@@ -83,22 +81,25 @@ function normalizeParams(params: URLSearchParams): FilterOptions | null {
 }
 
 const loadMoreSchema = z.object({
-  pc: z.preprocess(value => value === '' ? undefined : value, pcSchema.optional()),
-  leftover: z.preprocess(value => value === '' ? undefined : value, queueSchema.optional()),
+  pc: z.preprocess((value) => (value === '' ? undefined : value), pcSchema.optional()),
+  leftover: z.preprocess((value) => (value === '' ? undefined : value), queueSchema.optional()),
   cursor: setupIDSchema
-})
+});
 
 export const actions: Actions = {
-  loadMore: formAction(loadMoreSchema, async ({ data: { pc, leftover, cursor }, locals: { supabase } }) => {
-    const { data, hasMore, error } = await getDatabaseSetups(supabase, pc, leftover, cursor);
+  loadMore: formAction(
+    loadMoreSchema,
+    async ({ data: { pc, leftover, cursor }, locals: { supabase } }) => {
+      const { data, hasMore, error } = await getDatabaseSetups(supabase, pc, leftover, cursor);
 
-    if (error) {
-      console.error("Failed to load more setups:", error.message)
-      return fail(500, {
-        error: "Failed to load more setups"
-      })
+      if (error) {
+        console.error('Failed to load more setups:', error.message);
+        return fail(500, {
+          error: 'Failed to load more setups'
+        });
+      }
+
+      return { setups: data, hasMore };
     }
-
-    return { setups: data, hasMore }
-  })
-}
+  )
+};

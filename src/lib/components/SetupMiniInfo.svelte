@@ -9,6 +9,6 @@
     <FumenRender {fumen} minHeight={4} />
   </div>
   <div class="flex justify-center">
-    <p>{solve_percent}%</p>
+    <p>{solve_percent.toFixed(2)}%</p>
   </div>
 </div>
